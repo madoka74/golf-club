@@ -42,7 +42,7 @@
           <input id="setup-api-key" type="password" placeholder="$2a$10$..." style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px; font-size:0.9rem; font-family:monospace; width:100%;">
         </div>
         <div id="setup-error" style="display:none; background:#fdecea; color:#c0392b; border-radius:8px; padding:10px 14px; font-size:0.85rem; margin-bottom:12px;"></div>
-        <button class="btn btn-primary btn-block" onclick="saveSetup()">✓ 설정 저장 및 시작</button>
+        <button id="btn-setup-save" class="btn btn-primary btn-block" onclick="saveSetup()">✓ 설정 저장 및 시작</button>
       </div>
     </div>
   </div>
@@ -359,8 +359,7 @@
 <script>
   window.resetConfig = function() {
     if (!confirm('DB 설정을 초기화하시겠습니까? 앱을 다시 설정해야 합니다.')) return;
-    localStorage.removeItem('gc_bin_id');
-    localStorage.removeItem('gc_api_key');
+    DB.clearConfig();
     location.reload();
   };
 </script>

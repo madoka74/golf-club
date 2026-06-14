@@ -1,32 +1,53 @@
 // ===== GOLF CLUB DATA STORE =====
-// JSONBin.io를 백엔드로 사용하는 데이터 레이어
 
 const DB = {
   // ─── 설정 ───────────────────────────────────────────
-  // 최초 설정 후 아래 값들을 채워야 합니다. setup.html 참조.
-  binId: localStorage.getItem('gc_bin_id') || '',
-  apiKey: localStorage.getItem('gc_api_key') || '',
+  binId: '',
+  apiKey: '',
   BASE_URL: 'https://api.jsonbin.io/v3/b',
 
-  // ─── 기본 데이터 구조 ────────────────────────────────
   defaultData: {
     members: [],
     meetings: [],
-    participants: {},   // { meetingId: [{ name, phone, joinedAt }] }
-    teamResults: {},    // { meetingId: [[member, ...], ...] }
+    participants: {},
+    teamResults: {},
     admin: { id: 'admin', pw: '123456' }
   },
 
-  // ─── 초기화 ──────────────────────────────────────────
+  // ─── 초기화: localStorage에서 읽기 ──────────────────
+  init() {
+    try {
+      this.binId  = localStorage.getItem('gc_bin_id')  || '';
+      this.apiKey = localStorage.getItem('gc_api_key') || '';
+    } catch(e) {
+      // localStorage 접근 불가 환경(프라이빗 브라우징 등)
+      this.binId = '';
+      this.apiKey = '';
+    }
+  },
+
   isConfigured() {
-    return this.binId && this.apiKey;
+    return !!(this.binId && this.apiKey);
   },
 
   setConfig(binId, apiKey) {
-    this.binId = binId;
+    this.binId  = binId;
     this.apiKey = apiKey;
-    localStorage.setItem('gc_bin_id', binId);
-    localStorage.setItem('gc_api_key', apiKey);
+    try {
+      localStorage.setItem('gc_bin_id',  binId);
+      localStorage.setItem('gc_api_key', apiKey);
+    } catch(e) {
+      console.warn('localStorage 저장 실패:', e);
+    }
+  },
+
+  clearConfig() {
+    this.binId = '';
+    this.apiKey = '';
+    try {
+      localStorage.removeItem('gc_bin_id');
+      localStorage.removeItem('gc_api_key');
+    } catch(e) {}
   },
 
   // ─── JSONBin API 호출 ─────────────────────────────────
@@ -42,16 +63,16 @@ const DB = {
     };
     if (body) opts.body = JSON.stringify(body);
     const res = await fetch(`${this.BASE_URL}/${this.binId}`, opts);
-    if (!res.ok) throw new Error(`API 오류: ${res.status}`);
+    if (!res.ok) throw new Error(`API 오류 ${res.status}: Bin ID 또는 API Key를 확인해주세요.`);
     const json = await res.json();
-    return method === 'GET' ? json.record : json.record;
+    return json.record;
   },
 
   async load() {
     try {
       return await this._fetch('GET');
-    } catch {
-      return { ...this.defaultData };
+    } catch(e) {
+      throw e;
     }
   },
 
@@ -67,7 +88,6 @@ const DB = {
 
   async addMember(member) {
     const d = await this.load();
-    // 중복 체크: 이름+전화번호 동일하면 차단
     const dup = d.members.find(m => m.name === member.name && m.phone === member.phone);
     if (dup) throw new Error('같은 이름과 전화번호로 이미 등록된 회원입니다.');
     member.id = Date.now().toString();
@@ -83,7 +103,6 @@ const DB = {
     await this.save(d);
   },
 
-  // 전화번호로 본인 확인 후 수정
   async updateMember(id, phone, updates) {
     const d = await this.load();
     const idx = d.members.findIndex(m => m.id === id);
@@ -101,6 +120,12 @@ const DB = {
     return members.filter(m =>
       m.name.toLowerCase().includes(q) || m.phone.includes(q)
     );
+  },
+
+  // 이름+전화번호로 회원 조회 (참가신청 검증용)
+  async findMember(name, phone) {
+    const members = await this.getMembers();
+    return members.find(m => m.name === name && m.phone === phone) || null;
   },
 
   // ─── 골프 모임 CRUD ───────────────────────────────────
@@ -128,27 +153,34 @@ const DB = {
   async deleteMeeting(id) {
     const d = await this.load();
     d.meetings = d.meetings.filter(m => m.id !== id);
-    delete d.participants?.[id];
-    delete d.teamResults?.[id];
+    if (d.participants) delete d.participants[id];
+    if (d.teamResults) delete d.teamResults[id];
     await this.save(d);
   },
 
-  // ─── 참가 신청/취소 ────────────────────────────────────
+  // ─── 참가 신청/취소 (회원 검증 포함) ──────────────────
   async getParticipants(meetingId) {
     const d = await this.load();
-    return (d.participants?.[meetingId] || []);
+    return d.participants?.[meetingId] || [];
   },
 
   async joinMeeting(meetingId, name, phone) {
     const d = await this.load();
+
+    // ① 회원 존재 여부 확인
+    const member = (d.members || []).find(m => m.name === name && m.phone === phone);
+    if (!member) throw new Error('등록된 회원만 신청할 수 있습니다.\n이름과 전화번호가 회원 정보와 정확히 일치해야 합니다.');
+
     if (!d.participants) d.participants = {};
     if (!d.participants[meetingId]) d.participants[meetingId] = [];
-    const already = d.participants[meetingId].find(
-      p => p.name === name && p.phone === phone
-    );
+
+    // ② 중복 신청 확인
+    const already = d.participants[meetingId].find(p => p.name === name && p.phone === phone);
     if (already) throw new Error('이미 신청된 참가자입니다.');
+
     d.participants[meetingId].push({
       name, phone,
+      memberId: member.id,
       joinedAt: new Date().toISOString()
     });
     await this.save(d);
@@ -156,7 +188,14 @@ const DB = {
 
   async cancelMeeting(meetingId, name, phone) {
     const d = await this.load();
-    if (!d.participants?.[meetingId]) throw new Error('참가 정보가 없습니다.');
+
+    // ① 회원 존재 여부 확인
+    const member = (d.members || []).find(m => m.name === name && m.phone === phone);
+    if (!member) throw new Error('등록된 회원 정보와 일치하지 않습니다.');
+
+    if (!d.participants?.[meetingId]) throw new Error('참가 신청 내역이 없습니다.');
+
+    // ② 신청 목록에 있는지 확인
     const before = d.participants[meetingId].length;
     d.participants[meetingId] = d.participants[meetingId].filter(
       p => !(p.name === name && p.phone === phone)
@@ -187,12 +226,17 @@ const DB = {
   }
 };
 
+// ─── 앱 시작 시 즉시 init 호출 ──────────────────────────
+DB.init();
+
 // ─── 관리자 세션 ────────────────────────────────────────
 const AdminSession = {
   KEY: 'gc_admin_logged',
-  login() { sessionStorage.setItem(this.KEY, '1'); },
-  logout() { sessionStorage.removeItem(this.KEY); },
-  isLoggedIn() { return sessionStorage.getItem(this.KEY) === '1'; }
+  login()    { try { sessionStorage.setItem(this.KEY, '1'); } catch(e) {} },
+  logout()   { try { sessionStorage.removeItem(this.KEY); } catch(e) {} },
+  isLoggedIn() {
+    try { return sessionStorage.getItem(this.KEY) === '1'; } catch(e) { return false; }
+  }
 };
 
 // ─── 유틸 ────────────────────────────────────────────────
@@ -200,11 +244,6 @@ function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-}
-
-function formatDateShort(iso) {
-  const d = new Date(iso);
-  return `${d.getMonth()+1}/${d.getDate()}`;
 }
 
 function formatTime(t) {
@@ -232,17 +271,16 @@ function makeTeams(participants, size = 4) {
   return teams;
 }
 
-// Toast 알림
 function showToast(msg, type = 'success') {
   const container = document.getElementById('toast-container');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type === 'error' ? 'error' : ''}`;
   toast.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span> ${msg}`;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 3200);
+  setTimeout(() => toast.remove(), 3500);
 }
 
-// 로딩 버튼 상태
 function setLoading(btn, loading, text = '저장') {
   btn.disabled = loading;
   btn.textContent = loading ? '처리 중...' : text;
