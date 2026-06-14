@@ -1,7 +1,6 @@
 // ===== GOLF CLUB APP =====
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ─── 초기 설정 확인 ────────────────────────────────────
   if (!DB.isConfigured()) {
     showSetupScreen();
     return;
@@ -23,12 +22,15 @@ function hideSetupScreen() {
 window.saveSetup = async function() {
   const binId = document.getElementById('setup-bin-id').value.trim();
   const apiKey = document.getElementById('setup-api-key').value.trim();
+  const errEl = document.getElementById('setup-error');
+
   if (!binId || !apiKey) {
-    showToast('Bin ID와 API Key를 모두 입력해주세요.', 'error');
+    errEl.style.display = 'block';
+    errEl.textContent = 'Bin ID와 Master API Key를 모두 입력해주세요.';
     return;
   }
+  errEl.style.display = 'none';
   DB.setConfig(binId, apiKey);
-  showToast('설정이 저장되었습니다.');
   hideSetupScreen();
   initApp();
 };
@@ -38,7 +40,6 @@ function initApp() {
   updateAdminUI();
   navigateTo('members');
 
-  // 네비 클릭
   document.querySelectorAll('.main-nav a[data-page]').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
@@ -73,10 +74,8 @@ function updateAdminUI() {
 // 신상정보 페이지
 // ════════════════════════════════════════════════════════════
 async function renderMembersPage() {
-  const section = document.getElementById('page-members');
   const listWrap = document.getElementById('member-list-wrap');
   listWrap.innerHTML = '<div class="empty-state"><p>불러오는 중...</p></div>';
-
   try {
     const members = await DB.getMembers();
     renderMemberTable(members);
@@ -119,7 +118,6 @@ function renderMemberTable(members) {
   `;
 }
 
-// 회원 검색
 window.searchMembers = async function() {
   const q = document.getElementById('member-search').value;
   const members = await DB.searchMembers(q);
@@ -140,23 +138,19 @@ window.openMemberDetail = async function(id) {
       ${row('직장', m.company || '-')} ${row('직책', m.position || '-')}
     </div>
     <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-outline btn-sm" onclick="openEditMember('${m.id}')">
-        ✏️ 정보 수정
-      </button>
+      <button class="btn btn-outline btn-sm" onclick="openEditMember('${m.id}')">✏️ 정보 수정</button>
       ${AdminSession.isLoggedIn() ? `
-        <button class="btn btn-danger btn-sm" onclick="deleteMemberConfirm('${m.id}','${m.name}')">
-          🗑 회원 삭제
-        </button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="deleteMemberConfirm('${m.id}','${m.name}')">🗑 회원 삭제</button>` : ''}
     </div>
   `;
-  document.getElementById('modal-member-detail').classList.add('open');
+  openModal('modal-member-detail');
 };
 
 function row(label, value) {
   return `<div class="info-row"><span class="info-label">${label}</span><span class="info-value">${value}</span></div>`;
 }
 
-// 수정 모달 열기: 회원 상세 → 수정 폼으로 전환
+// 수정 모달
 window.openEditMember = async function(id) {
   const members = await DB.getMembers();
   const m = members.find(x => x.id === id);
@@ -164,20 +158,20 @@ window.openEditMember = async function(id) {
 
   document.getElementById('detail-content').innerHTML = `
     <p style="font-size:0.82rem; color:var(--ink-soft); margin-bottom:16px; background:var(--green-light); border-radius:8px; padding:10px 14px;">
-      🔒 본인 확인을 위해 등록된 <strong>전화번호</strong>를 입력해야 수정할 수 있습니다.
+      🔒 등록 시 입력한 <strong>전화번호</strong>가 일치해야 수정됩니다.
     </p>
     <div class="form-grid">
       <div class="form-group">
         <label>이름</label>
-        <input id="edit-name" value="${m.name}" placeholder="홍길동">
+        <input id="edit-name" value="${m.name}">
       </div>
       <div class="form-group">
-        <label>전화번호 (본인확인용, 변경불가)</label>
+        <label>전화번호 (본인확인·변경불가)</label>
         <input id="edit-phone" value="${m.phone}" placeholder="010-0000-0000">
       </div>
       <div class="form-group">
         <label>나이</label>
-        <input id="edit-age" type="number" value="${m.age || ''}" placeholder="45">
+        <input id="edit-age" type="number" value="${m.age || ''}">
       </div>
       <div class="form-group">
         <label>성별</label>
@@ -189,19 +183,19 @@ window.openEditMember = async function(id) {
       </div>
       <div class="form-group">
         <label>학과</label>
-        <input id="edit-dept" value="${m.dept || ''}" placeholder="경영학과">
+        <input id="edit-dept" value="${m.dept || ''}">
       </div>
       <div class="form-group">
         <label>학번</label>
-        <input id="edit-studentid" value="${m.studentId || ''}" placeholder="98학번">
+        <input id="edit-studentid" value="${m.studentId || ''}">
       </div>
       <div class="form-group">
         <label>직장</label>
-        <input id="edit-company" value="${m.company || ''}" placeholder="(주)삼성전자">
+        <input id="edit-company" value="${m.company || ''}">
       </div>
       <div class="form-group">
         <label>직책</label>
-        <input id="edit-position" value="${m.position || ''}" placeholder="부장">
+        <input id="edit-position" value="${m.position || ''}">
       </div>
     </div>
     <div style="display:flex; gap:10px; margin-top:20px;">
@@ -238,7 +232,7 @@ window.submitEditMember = async function(id) {
   }
 };
 
-
+window.deleteMemberConfirm = async function(id, name) {
   if (!confirm(`"${name}" 회원을 삭제하시겠습니까?`)) return;
   try {
     await DB.deleteMember(id);
@@ -250,9 +244,8 @@ window.submitEditMember = async function(id) {
   }
 };
 
-// 회원 등록 모달
-window.openAddMember = function() {
-  document.getElementById('modal-add-member').classList.add('open');
+window.openAddMemberGlobal = function() {
+  openModal('modal-add-member');
 };
 
 window.submitAddMember = async function() {
@@ -308,7 +301,6 @@ function renderCalendar() {
   const prevDays = new Date(calYear, calMonth, 0).getDate();
   const today = new Date();
 
-  // 해당 월의 모임 맵
   const meetingMap = {};
   calMeetings.forEach(m => {
     const d = new Date(m.date);
@@ -322,12 +314,10 @@ function renderCalendar() {
   const grid = document.getElementById('cal-days');
   let html = '';
 
-  // 이전 달 채우기
   for (let i = firstDay - 1; i >= 0; i--) {
     html += `<div class="cal-day other-month"><div class="day-num">${prevDays - i}</div></div>`;
   }
 
-  // 현재 달
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(calYear, calMonth, d);
     const dow = date.getDay();
@@ -341,7 +331,6 @@ function renderCalendar() {
     </div>`;
   }
 
-  // 다음 달 채우기
   const total = firstDay + daysInMonth;
   const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let i = 1; i <= remaining; i++) {
@@ -367,8 +356,9 @@ function renderMeetingList() {
     wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">🏌️</div><p>등록된 모임이 없습니다.</p></div>';
     return;
   }
-  const upcoming = calMeetings.filter(m => new Date(m.date) >= new Date(new Date().toDateString()));
-  const past = calMeetings.filter(m => new Date(m.date) < new Date(new Date().toDateString()));
+  const now = new Date(new Date().toDateString());
+  const upcoming = calMeetings.filter(m => new Date(m.date) >= now);
+  const past = calMeetings.filter(m => new Date(m.date) < now);
   let html = '';
   if (upcoming.length) {
     html += `<p style="font-size:0.75rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:8px;">예정된 모임</p>`;
@@ -391,7 +381,6 @@ function meetingCardHTML(m) {
     </div>`;
 }
 
-// ─── 모임 상세 모달 ───────────────────────────────────────
 window.openMeetingModal = async function(id) {
   const meeting = await DB.getMeeting(id);
   const participants = await DB.getParticipants(id);
@@ -411,7 +400,7 @@ window.openMeetingModal = async function(id) {
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
       <strong style="font-size:0.9rem;">참가 신청 현황 <span style="color:var(--green-fairway)">${participants.length}명</span></strong>
     </div>
-    <div class="participant-list" id="participant-list">
+    <div class="participant-list">
       ${participants.length ? participants.map(p => `
         <div class="participant-item">
           <div>
@@ -528,7 +517,6 @@ window.deleteMeetingConfirm = async function(id) {
   renderMeetingList();
 };
 
-// ─── 모임 추가 모달 ───────────────────────────────────────
 window.submitAddMeeting = async function() {
   const date = document.getElementById('inp-meeting-date').value;
   const place = document.getElementById('inp-meeting-place').value.trim();
@@ -607,27 +595,19 @@ async function renderAdminPanel() {
 // ─── 모달 헬퍼 ────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
 window.closeModal = closeModal;
 
-// 모달 외부 클릭 닫기
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', e => {
     if (e.target === el) el.classList.remove('open');
   });
 });
 
-// ESC 닫기
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
   }
 });
-
-// 회원 등록 모달 - 누구나 접근 가능
-window.openAddMemberGlobal = function() {
-  openModal('modal-add-member');
-};
 
 window.openAddMeetingModal = function() {
   if (!AdminSession.isLoggedIn()) {
