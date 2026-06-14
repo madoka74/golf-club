@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>동창 골프 모임</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>">
+</head>
+<body>
+
+<!-- ════ 초기 설정 화면 ════ -->
+<div id="setup-screen" style="
+  display:flex; position:fixed; inset:0; background:var(--cream);
+  align-items:center; justify-content:center; z-index:9999; padding:20px;">
+  <div style="width:100%; max-width:480px;">
+    <div style="text-align:center; margin-bottom:32px;">
+      <div style="font-size:3rem; margin-bottom:12px;">⛳</div>
+      <h1 style="font-family:'Playfair Display',serif; color:var(--green-deep); font-size:1.8rem;">동창 골프 모임</h1>
+      <p style="color:var(--ink-soft); margin-top:8px; font-size:0.9rem;">서비스를 사용하기 전에 데이터 저장소를 설정해주세요.</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>JSONBin.io 설정</h2>
+        <p>무료 온라인 저장소 연결</p>
+      </div>
+      <div class="card-body">
+        <div style="background:#fff8e1; border:1px solid var(--gold); border-radius:8px; padding:14px; margin-bottom:20px; font-size:0.83rem; line-height:1.7; color:#5a4000;">
+          <strong>⚡ 빠른 설정 방법</strong><br>
+          1. <a href="https://jsonbin.io" target="_blank" style="color:var(--green-deep); font-weight:600;">jsonbin.io</a>에서 무료 계정 생성<br>
+          2. Dashboard → <strong>API Keys</strong> → Master Key 복사<br>
+          3. <strong>Bins → Create Bin</strong> 클릭 → 아래 JSON 붙여넣기 후 생성<br>
+          &nbsp;&nbsp;&nbsp;<code style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:0.78rem;">{"members":[],"meetings":[],"participants":{},"teamResults":{},"admin":{"id":"admin","pw":"123456"}}</code><br>
+          4. 생성된 Bin의 ID와 Master Key를 아래에 입력
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Bin ID</label>
+          <input id="setup-bin-id" placeholder="예: 64a1b2c3d4e5f6a7b8c9d0e1" style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px; font-size:0.9rem; font-family:monospace; width:100%;">
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label>Master API Key</label>
+          <input id="setup-api-key" type="password" placeholder="$2a$10$..." style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px; font-size:0.9rem; font-family:monospace; width:100%;">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="saveSetup()">✓ 설정 저장 및 시작</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 앱 메인 ════ -->
+<div id="app-screen">
+
+  <!-- 헤더 -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#" class="logo" onclick="return false;">
+        <div class="logo-icon">⛳</div>
+        <div class="logo-text">
+          동창 골프 모임
+          <span class="logo-sub">ALUMNI GOLF CLUB</span>
+        </div>
+      </a>
+      <nav class="main-nav">
+        <a href="#" data-page="members">👥 회원</a>
+        <a href="#" data-page="calendar">📅 모임</a>
+        <a href="#" data-page="admin" class="nav-admin-btn" id="admin-nav-btn">🔑 관리자</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="main-wrap">
+
+    <!-- ── 회원 신상정보 페이지 ── -->
+    <section id="page-members" class="page-section">
+      <div class="page-hero">
+        <h1>회원 신상정보</h1>
+        <div class="hero-divider"></div>
+        <p>동창 골프 모임 회원들의 정보를 확인하세요.</p>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-bottom:24px; align-items:center; flex-wrap:wrap;">
+        <div class="search-bar" style="flex:1; margin:0; min-width:240px;">
+          <input id="member-search" placeholder="이름 또는 전화번호로 검색" onkeyup="if(event.key==='Enter') searchMembers()">
+          <button class="btn btn-outline" onclick="searchMembers()">검색</button>
+          <button class="btn btn-outline" onclick="document.getElementById('member-search').value=''; searchMembers()">초기화</button>
+        </div>
+        <button class="btn btn-primary" onclick="openAddMemberGlobal()">+ 회원 등록</button>
+      </div>
+
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <div id="member-list-wrap" style="padding:24px;">
+            <div class="empty-state"><p>불러오는 중...</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 캘린더 / 골프 모임 페이지 ── -->
+    <section id="page-calendar" class="page-section">
+      <div class="page-hero">
+        <h1>골프 모임</h1>
+        <div class="hero-divider"></div>
+        <p>모임 일정을 확인하고 참가 신청을 하세요.</p>
+      </div>
+
+      <div id="admin-meeting-bar" style="margin-bottom:20px;">
+        <button class="btn btn-gold" onclick="openAddMeetingModal()">+ 모임 생성</button>
+      </div>
+
+      <div class="calendar-wrap">
+        <!-- 캘린더 -->
+        <div class="calendar-grid">
+          <div class="cal-header">
+            <button class="cal-nav" onclick="calPrev()">‹</button>
+            <span class="cal-month" id="cal-month-label"></span>
+            <button class="cal-nav" onclick="calNext()">›</button>
+          </div>
+          <div class="cal-weekdays">
+            <span style="color:#c0392b">일</span><span>월</span><span>화</span><span>수</span>
+            <span>목</span><span style="color:#2980b9">금</span><span style="color:#2980b9">토</span>
+          </div>
+          <div class="cal-days" id="cal-days"></div>
+        </div>
+
+        <!-- 모임 목록 -->
+        <div>
+          <div style="margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;">
+            <strong style="color:var(--green-deep); font-size:0.9rem;">📋 모임 목록</strong>
+          </div>
+          <div class="meeting-list" id="meeting-list">
+            <div class="empty-state"><p>불러오는 중...</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 관리자 페이지 ── -->
+    <section id="page-admin" class="page-section">
+      <div class="page-hero">
+        <h1>관리자</h1>
+        <div class="hero-divider"></div>
+        <p>관리자 기능에 접근하려면 로그인하세요.</p>
+      </div>
+
+      <!-- 로그인 폼 -->
+      <div id="admin-login-area">
+        <div style="max-width:400px; margin:0 auto;">
+          <div class="card">
+            <div class="card-header">
+              <h2>관리자 로그인</h2>
+              <p>아이디와 비밀번호를 입력하세요</p>
+            </div>
+            <div class="card-body">
+              <div class="form-group" style="margin-bottom:14px;">
+                <label>아이디</label>
+                <input id="admin-id" placeholder="admin" onkeydown="if(event.key==='Enter') adminLogin()">
+              </div>
+              <div class="form-group" style="margin-bottom:20px;">
+                <label>비밀번호</label>
+                <input id="admin-pw" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter') adminLogin()">
+              </div>
+              <button id="btn-admin-login" class="btn btn-primary btn-block" onclick="adminLogin()">로그인</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 관리자 패널 -->
+      <div id="admin-panel-area" style="display:none">
+        <div class="admin-badge">⚙ 관리자 모드 활성화</div>
+
+        <!-- 통계 카드 -->
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px;">
+          <div class="card" style="text-align:center;">
+            <div class="card-body">
+              <div style="font-size:1.8rem; font-weight:700; color:var(--green-deep); font-family:'Playfair Display',serif" id="stat-members">-</div>
+              <div style="font-size:0.8rem; color:var(--ink-soft); margin-top:4px;">등록 회원</div>
+            </div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div class="card-body">
+              <div style="font-size:1.8rem; font-weight:700; color:var(--green-deep); font-family:'Playfair Display',serif" id="stat-meetings">-</div>
+              <div style="font-size:0.8rem; color:var(--ink-soft); margin-top:4px;">전체 모임</div>
+            </div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div class="card-body">
+              <div style="font-size:1.8rem; font-weight:700; color:var(--gold); font-family:'Playfair Display',serif" id="stat-upcoming">-</div>
+              <div style="font-size:0.8rem; color:var(--ink-soft); margin-top:4px;">예정 모임</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 관리자 메뉴 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:32px;">
+          <div class="card">
+            <div class="card-body">
+              <h3 style="font-size:0.95rem; margin-bottom:12px; color:var(--green-deep);">👥 회원 관리</h3>
+              <p style="font-size:0.82rem; color:var(--ink-soft); margin-bottom:14px;">새 회원을 등록하거나 기존 회원 정보를 관리합니다.</p>
+              <button class="btn btn-primary btn-sm" onclick="navigateTo('members')">회원 목록으로 이동</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <h3 style="font-size:0.95rem; margin-bottom:12px; color:var(--green-deep);">📅 모임 관리</h3>
+              <p style="font-size:0.82rem; color:var(--ink-soft); margin-bottom:14px;">새 골프 모임을 생성하고 참가자를 관리합니다.</p>
+              <button class="btn btn-gold btn-sm" onclick="navigateTo('calendar')">모임 캘린더로 이동</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DB 재설정 -->
+        <div class="card">
+          <div class="card-body">
+            <h3 style="font-size:0.95rem; margin-bottom:8px; color:var(--green-deep);">⚙ 시스템</h3>
+            <p style="font-size:0.82rem; color:var(--ink-soft); margin-bottom:14px;">JSONBin 설정을 변경하거나 로그아웃합니다.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" onclick="resetConfig()">DB 재설정</button>
+              <button class="btn btn-danger btn-sm" onclick="adminLogout()">로그아웃</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Toast 컨테이너 -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ════ 모달들 ════ -->
+
+<!-- 회원 상세 -->
+<div class="modal-overlay" id="modal-member-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>회원 상세 정보</h3>
+      <button class="modal-close" onclick="closeModal('modal-member-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="detail-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-member-detail')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 회원 등록 -->
+<div class="modal-overlay" id="modal-add-member">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>새 회원 등록</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-member')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-add-member" onsubmit="return false;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>이름 *</label>
+            <input id="inp-name" placeholder="홍길동" required>
+          </div>
+          <div class="form-group">
+            <label>전화번호 *</label>
+            <input id="inp-phone" placeholder="010-0000-0000" required>
+          </div>
+          <div class="form-group">
+            <label>나이</label>
+            <input id="inp-age" placeholder="예: 45" type="number" min="1" max="120">
+          </div>
+          <div class="form-group">
+            <label>성별</label>
+            <select id="inp-gender">
+              <option value="">선택</option>
+              <option value="남">남</option>
+              <option value="여">여</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>학과</label>
+            <input id="inp-dept" placeholder="예: 경영학과">
+          </div>
+          <div class="form-group">
+            <label>학번</label>
+            <input id="inp-studentid" placeholder="예: 98학번">
+          </div>
+          <div class="form-group">
+            <label>직장</label>
+            <input id="inp-company" placeholder="예: (주)삼성전자">
+          </div>
+          <div class="form-group">
+            <label>직책</label>
+            <input id="inp-position" placeholder="예: 부장">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-member')">취소</button>
+      <button id="btn-add-member" class="btn btn-primary" onclick="submitAddMember()">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모임 생성 -->
+<div class="modal-overlay" id="modal-add-meeting">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>골프 모임 생성</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-meeting')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-add-meeting" onsubmit="return false;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>날짜 *</label>
+            <input id="inp-meeting-date" type="date" required>
+          </div>
+          <div class="form-group">
+            <label>시간</label>
+            <input id="inp-meeting-time" type="time">
+          </div>
+          <div class="form-group full-width">
+            <label>장소 *</label>
+            <input id="inp-meeting-place" placeholder="예: 베어크리크 골프클럽" required>
+          </div>
+          <div class="form-group full-width">
+            <label>메모</label>
+            <input id="inp-meeting-note" placeholder="추가 안내사항 (선택)">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-meeting')">취소</button>
+      <button id="btn-add-meeting" class="btn btn-gold" onclick="submitAddMeeting()">생성</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모임 상세 -->
+<div class="modal-overlay" id="modal-meeting-detail">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <h3 id="meeting-modal-title">모임 상세</h3>
+      <button class="modal-close" onclick="closeModal('modal-meeting-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="meeting-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-meeting-detail')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+<script>
+  window.resetConfig = function() {
+    if (!confirm('DB 설정을 초기화하시겠습니까? 앱을 다시 설정해야 합니다.')) return;
+    localStorage.removeItem('gc_bin_id');
+    localStorage.removeItem('gc_api_key');
+    location.reload();
+  };
+</script>
+</body>
+</html>
