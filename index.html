@@ -7,7 +7,7 @@
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>동창 골프 모임</title>
-  <link rel="stylesheet" href="css/style.css?v=20260615">
+  <link rel="stylesheet" href="css/style.css?v=20260616">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>">
 </head>
 <body>
@@ -109,7 +109,7 @@
         <p>모임 일정을 확인하고 참가 신청을 하세요.</p>
       </div>
 
-      <div id="admin-meeting-bar" style="margin-bottom:20px;">
+      <div id="admin-meeting-bar" style="margin-bottom:20px; display:none;">
         <button class="btn btn-gold" onclick="openAddMeetingModal()">+ 모임 생성</button>
       </div>
 
@@ -357,8 +357,8 @@
   </div>
 </div>
 
-<script src="js/db.js?v=20260615"></script>
-<script src="js/app.js?v=20260615"></script>
+<script src="js/db.js?v=20260616"></script>
+<script src="js/app.js?v=20260616"></script>
 <script>
   window.resetConfig = function() {
     if (!confirm('DB 설정을 초기화하시겠습니까? 앱을 다시 설정해야 합니다.')) return;

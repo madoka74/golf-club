@@ -80,6 +80,10 @@ function updateAdminUI() {
   const isAdmin  = AdminSession.isLoggedIn();
   const adminNav = document.getElementById('admin-nav-btn');
   if (adminNav) adminNav.textContent = isAdmin ? '⚙ 관리자' : '🔑 관리자';
+
+  // 관리자 전용 버튼 표시/숨김
+  const meetingBar = document.getElementById('admin-meeting-bar');
+  if (meetingBar) meetingBar.style.display = isAdmin ? 'block' : 'none';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -510,10 +514,6 @@ window.submitAddMeeting = async function() {
 };
 
 window.openAddMeetingModal = function() {
-  if (!AdminSession.isLoggedIn()) {
-    showToast('모임 생성은 관리자만 가능합니다. 관리자 탭에서 로그인해주세요.', 'error');
-    return;
-  }
   openModal('modal-add-meeting');
 };
 
