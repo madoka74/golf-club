@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!DB.isConfigured()) {
     showSetupScreen();
   } else {
+    showAppScreen();
     initApp();
   }
 });
@@ -12,12 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── 설정 화면 ────────────────────────────────────────────
 function showSetupScreen() {
   document.getElementById('setup-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display  = 'none';
+  document.getElementById('app-screen').style.display   = 'none';
 }
 
 function hideSetupScreen() {
   document.getElementById('setup-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display  = 'block';
+  document.getElementById('app-screen').style.display   = 'block';
+}
+
+function showAppScreen() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'block';
 }
 
 window.saveSetup = async function() {
