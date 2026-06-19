@@ -905,19 +905,142 @@ body {
 }
 
 /* ===== RESPONSIVE ===== */
+
+/* ── 태블릿 ── */
 @media (max-width: 768px) {
-  .header-inner { padding: 0 16px; }
+  /* 헤더 */
+  .header-inner { padding: 0 14px; height: 56px; }
+  .logo-icon { width: 30px; height: 30px; font-size: 15px; }
+  .logo-text { font-size: 0.9rem; }
+  .logo-sub { font-size: 0.6rem; }
   .main-nav a { padding: 7px 10px; font-size: 0.8rem; }
-  .logo-text { font-size: 0.95rem; }
-  .calendar-wrap { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-  .main-wrap { padding: 24px 16px; }
-  .page-hero h1 { font-size: 1.6rem; }
+
+  /* 레이아웃 */
+  .main-wrap { padding: 20px 14px; }
+  .page-hero { margin-bottom: 24px; }
+  .page-hero h1 { font-size: 1.5rem; }
+
+  /* 폼 */
+  .form-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* 캘린더 */
+  .calendar-wrap { grid-template-columns: 1fr; gap: 20px; }
+
+  /* 팀 */
   .team-grid { grid-template-columns: 1fr 1fr; }
+
+  /* 모달 */
+  .modal { max-width: 100%; margin: 0 10px; }
+  .modal-header { padding: 16px 18px; }
+  .modal-body { padding: 18px; }
+  .modal-footer { padding: 0 18px 16px; }
 }
 
+/* ── 모바일 세로 (핵심) ── */
 @media (max-width: 480px) {
+  /* 헤더 — 로고 축약 + 네비 하단 고정 */
+  .site-header { position: sticky; top: 0; }
+  .header-inner { height: 52px; padding: 0 12px; }
+  .logo-sub { display: none; }           /* 영문 서브타이틀 숨김 */
+  .logo-text { font-size: 0.85rem; }
+  .logo-icon { width: 28px; height: 28px; font-size: 14px; }
+
+  /* 네비 — 아이콘+텍스트 작게 */
   .main-nav { gap: 2px; }
-  .main-nav a { padding: 6px 8px; font-size: 0.75rem; }
-  .team-grid { grid-template-columns: 1fr; }
+  .main-nav a {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+    border-radius: 5px;
+  }
+
+  /* 메인 */
+  .main-wrap { padding: 16px 12px 80px; } /* 하단 여백 (네비 없으면 그냥 패딩) */
+  .page-hero h1 { font-size: 1.3rem; }
+  .page-hero p { font-size: 0.82rem; }
+  .hero-divider { margin: 8px 0 10px; }
+
+  /* 검색바 — 세로 스택 */
+  .search-bar { flex-wrap: wrap; gap: 6px; }
+  .search-bar input { min-width: 0; width: 100%; }
+  .search-bar .btn { flex: 1; font-size: 0.8rem; padding: 8px 10px; }
+
+  /* 회원 등록 버튼 — 풀 너비 */
+  .search-bar + .btn,
+  #page-members > div > .btn { width: 100%; margin-top: 4px; }
+
+  /* 테이블 — 가로 스크롤 허용 */
+  .data-table { font-size: 0.78rem; min-width: 560px; }
+  .data-table th,
+  .data-table td { padding: 9px 10px; white-space: nowrap; }
+
+  /* 캘린더 */
+  .cal-day { min-height: 38px; padding: 2px; }
+  .day-num { font-size: 0.75rem; width: 20px; height: 20px; }
+  .cal-event-dot { font-size: 0.5rem; padding: 1px 3px; }
+  .cal-weekdays span { font-size: 0.65rem; padding: 6px 0; }
+  .cal-month { font-size: 0.95rem; }
+
+  /* 모임 카드 */
+  .meeting-card { padding: 12px 14px; }
+  .mc-date { font-size: 0.7rem; }
+  .mc-title { font-size: 0.85rem; }
+
+  /* 모달 — 화면 꽉 채우기 */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+  }
+  .modal-header { border-radius: 16px 16px 0 0; padding: 14px 16px; }
+  .modal-header h3 { font-size: 1rem; }
+  .modal-body { padding: 16px; }
+  .modal-footer { padding: 0 16px 20px; }
+
+  /* 폼 */
+  .form-grid { gap: 10px; }
+  .form-group label { font-size: 0.72rem; }
+  .form-group input,
+  .form-group select { padding: 9px 12px; font-size: 0.85rem; }
+
+  /* 버튼 */
+  .btn { font-size: 0.82rem; padding: 9px 16px; }
+  .btn-sm { padding: 7px 12px; font-size: 0.78rem; }
+
+  /* 참가자 목록 */
+  .participant-item { padding: 8px 10px; }
+  .p-name { font-size: 0.85rem; }
+  .p-info { font-size: 0.72rem; }
+
+  /* 팀 그리드 */
+  .team-grid { grid-template-columns: 1fr; gap: 10px; }
+  .team-card-header { padding: 8px 12px; }
+  .team-member { padding: 8px 12px; }
+
+  /* 탭 */
+  .tab-btn { padding: 8px 10px; font-size: 0.8rem; }
+
+  /* 관리자 통계 */
+  .mock-stat-row,
+  #admin-panel-area > div:nth-child(3) {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* 정보 행 */
+  .info-row { flex-direction: column; gap: 2px; padding: 8px 0; }
+  .info-label { width: auto; }
+
+  /* 카드 바디 */
+  .card-body { padding: 16px; }
+  .card-header { padding: 14px 16px 12px; }
+}
+
+/* ── 아주 작은 화면 (SE 등) ── */
+@media (max-width: 360px) {
+  .main-nav a { padding: 5px 6px; font-size: 0.68rem; }
+  .header-inner { padding: 0 10px; }
+  .main-wrap { padding: 14px 10px 80px; }
+  .page-hero h1 { font-size: 1.2rem; }
 }
