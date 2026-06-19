@@ -2,8 +2,9 @@
 
 const DB = {
   // ─── 설정 ───────────────────────────────────────────
-  binId: '',
-  apiKey: '',
+  // ✏️  아래 두 줄에 JSONBin 값을 입력하세요
+  binId:  '6a2eb861da38895dfebeeec8',
+  apiKey: '$2a$10$NLeMDw1t.Cmnk2PRS7iLSODNABla00y.Wj0LT8rIGMj8EUupMhQ4C',
   BASE_URL: 'https://api.jsonbin.io/v3/b',
 
   defaultData: {
@@ -14,41 +15,15 @@ const DB = {
     admin: { id: 'admin', pw: '123456' }
   },
 
-  // ─── 초기화: localStorage에서 읽기 ──────────────────
-  init() {
-    try {
-      this.binId  = localStorage.getItem('gc_bin_id')  || '';
-      this.apiKey = localStorage.getItem('gc_api_key') || '';
-    } catch(e) {
-      // localStorage 접근 불가 환경(프라이빗 브라우징 등)
-      this.binId = '';
-      this.apiKey = '';
-    }
-  },
+  // localStorage / setConfig / clearConfig 불필요 — 코드에 고정
+  init() {},
 
   isConfigured() {
-    return !!(this.binId && this.apiKey);
+    return !!(this.binId && this.binId !== 'YOUR_BIN_ID_HERE' &&
+              this.apiKey && this.apiKey !== 'YOUR_API_KEY_HERE');
   },
 
-  setConfig(binId, apiKey) {
-    this.binId  = binId;
-    this.apiKey = apiKey;
-    try {
-      localStorage.setItem('gc_bin_id',  binId);
-      localStorage.setItem('gc_api_key', apiKey);
-    } catch(e) {
-      console.warn('localStorage 저장 실패:', e);
-    }
-  },
-
-  clearConfig() {
-    this.binId = '';
-    this.apiKey = '';
-    try {
-      localStorage.removeItem('gc_bin_id');
-      localStorage.removeItem('gc_api_key');
-    } catch(e) {}
-  },
+  // setConfig / clearConfig 제거됨 (코드에 직접 입력 방식)
 
   // ─── JSONBin API 호출 ─────────────────────────────────
   async _fetch(method = 'GET', body = null) {

@@ -1,62 +1,31 @@
 // ===== GOLF CLUB APP =====
 
 document.addEventListener('DOMContentLoaded', () => {
-  // DB.init()은 db.js 로드 시 자동 실행됨
   if (!DB.isConfigured()) {
-    showSetupScreen();
-  } else {
-    showAppScreen();
-    initApp();
-  }
-});
-
-// ─── 설정 화면 ────────────────────────────────────────────
-function showSetupScreen() {
-  document.getElementById('setup-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display   = 'none';
-}
-
-function hideSetupScreen() {
-  document.getElementById('setup-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display   = 'block';
-}
-
-function showAppScreen() {
-  document.getElementById('setup-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display   = 'block';
-}
-
-window.saveSetup = async function() {
-  const binId  = document.getElementById('setup-bin-id').value.trim();
-  const apiKey = document.getElementById('setup-api-key').value.trim();
-  const errEl  = document.getElementById('setup-error');
-
-  if (!binId || !apiKey) {
-    errEl.style.display = 'block';
-    errEl.textContent   = 'Bin ID와 Master API Key를 모두 입력해주세요.';
+    // Bin ID / API Key가 코드에 입력되지 않은 상태
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;
+                  font-family:'Noto Sans KR',sans-serif;background:#faf8f2;padding:20px;">
+        <div style="text-align:center;max-width:440px;">
+          <div style="font-size:3rem;margin-bottom:16px;">⛳</div>
+          <h2 style="color:#1a3a2a;margin-bottom:12px;">설정이 필요합니다</h2>
+          <p style="color:#4a4a4a;font-size:0.9rem;line-height:1.7;">
+            <code>js/db.js</code> 파일을 열어<br>
+            <strong>binId</strong>와 <strong>apiKey</strong>에<br>
+            JSONBin 값을 입력한 뒤 다시 배포해주세요.
+          </p>
+        </div>
+      </div>`;
     return;
   }
-  errEl.style.display = 'none';
+  initApp();
+});
 
-  // 실제 연결 테스트
-  const testBtn = document.getElementById('btn-setup-save');
-  setLoading(testBtn, true, '설정 저장 및 시작');
-  try {
-    DB.setConfig(binId, apiKey);
-    await DB.load(); // 연결 테스트: 실패하면 여기서 에러
-    hideSetupScreen();
-    initApp();
-  } catch(e) {
-    DB.clearConfig();
-    errEl.style.display = 'block';
-    errEl.textContent   = '연결 실패: Bin ID 또는 API Key를 확인해주세요. (' + e.message + ')';
-  } finally {
-    setLoading(testBtn, false, '✓ 설정 저장 및 시작');
-  }
-};
+// ─── 설정 화면 제거됨 (db.js에 직접 입력 방식) ───
 
 // ─── 앱 초기화 ────────────────────────────────────────────
 function initApp() {
+  document.getElementById('app-screen').style.display = 'block';
   updateAdminUI();
   navigateTo('members');
   document.querySelectorAll('.main-nav a[data-page]').forEach(a => {
