@@ -3,8 +3,8 @@
 const DB = {
   // ─── 설정 ───────────────────────────────────────────
   // ✏️  아래 두 줄에 JSONBin 값을 입력하세요
-  binId:  'YOUR_BIN_ID_HERE',
-  apiKey: 'YOUR_API_KEY_HERE',
+  binId:  '6a2eb861da38895dfebeeec8',
+  apiKey: '$2a$10$NLeMDw1t.Cmnk2PRS7iLSODNABla00y.Wj0LT8rIGMj8EUupMhQ4C',
   BASE_URL: 'https://api.jsonbin.io/v3/b',
 
   defaultData: {
