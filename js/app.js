@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initApp() {
   document.getElementById('app-screen').style.display = 'block';
   updateAdminUI();
-  navigateTo('members');
+  navigateTo('home');
   document.querySelectorAll('.main-nav a[data-page]').forEach(a => {
     a.addEventListener('click', e => { e.preventDefault(); navigateTo(a.dataset.page); });
   });
@@ -40,6 +40,7 @@ function navigateTo(page) {
   if (sec) sec.classList.add('active');
   const navLink = document.querySelector(`.main-nav a[data-page="${page}"]`);
   if (navLink) navLink.classList.add('active');
+  if (page === 'home')     renderHomePage();
   if (page === 'members')  renderMembersPage();
   if (page === 'calendar') renderCalendarPage();
   if (page === 'admin')    renderAdminPage();
@@ -79,14 +80,13 @@ function renderMemberTable(members) {
     <div style="overflow-x:auto;">
       <table class="data-table">
         <thead><tr>
-          <th>이름</th><th>나이</th><th>성별</th><th>전화번호</th>
+          <th>이름</th><th>성별</th><th>전화번호</th>
           <th>학과</th><th>학번</th><th>직장</th><th>직책</th>
         </tr></thead>
         <tbody>
           ${members.map(m => `
             <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
               <td><strong>${m.name}</strong></td>
-              <td>${m.age || '-'}</td>
               <td>${m.gender || '-'}</td>
               <td>${m.phone || '-'}</td>
               <td>${m.dept || '-'}</td>
@@ -117,7 +117,7 @@ window.openMemberDetail = async function(id) {
     if (!m) return;
     document.getElementById('detail-content').innerHTML = `
       <div class="info-list">
-        ${row('이름', m.name)}       ${row('나이', m.age ? m.age+'세' : '-')}
+        ${row('이름', m.name)}
         ${row('성별', m.gender||'-')} ${row('전화번호', m.phone||'-')}
         ${row('학과', m.dept||'-')}  ${row('학번', m.studentId||'-')}
         ${row('직장', m.company||'-')} ${row('직책', m.position||'-')}
@@ -147,7 +147,6 @@ window.openEditMember = async function(id) {
     <div class="form-grid">
       <div class="form-group"><label>이름</label><input id="edit-name" value="${m.name}"></div>
       <div class="form-group"><label>전화번호 (본인확인·변경불가)</label><input id="edit-phone" value="${m.phone}" placeholder="010-0000-0000"></div>
-      <div class="form-group"><label>나이</label><input id="edit-age" type="number" value="${m.age||''}"></div>
       <div class="form-group"><label>성별</label>
         <select id="edit-gender">
           <option value="">선택</option>
@@ -175,7 +174,7 @@ window.submitEditMember = async function(id) {
   setLoading(btn, true, '저장');
   try {
     await DB.updateMember(id, phone, {
-      name, age: v('edit-age'), gender: v('edit-gender'),
+      name, gender: v('edit-gender'),
       dept: v('edit-dept'), studentId: v('edit-studentid'),
       company: v('edit-company'), position: v('edit-position')
     });
@@ -209,7 +208,7 @@ window.submitAddMember = async function() {
   setLoading(btn, true, '등록');
   try {
     await DB.addMember({
-      name, phone, age: v('inp-age'), gender: v('inp-gender'),
+      name, phone, gender: v('inp-gender'),
       dept: v('inp-dept'), studentId: v('inp-studentid'),
       company: v('inp-company'), position: v('inp-position')
     });
@@ -385,14 +384,14 @@ window.openMeetingModal = async function(id) {
           <button class="tab-btn"        onclick="switchTab('cancel',this)">참가 취소</button>
         </div>
         <div id="tab-join">
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-grid" style="gap:10px;">
             <div class="form-group"><label>이름 (회원 등록 이름)</label><input id="join-name" placeholder="홍길동"></div>
             <div class="form-group"><label>전화번호 (회원 등록 번호)</label><input id="join-phone" placeholder="010-0000-0000"></div>
           </div>
           <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="joinMeeting('${id}')">신청하기</button>
         </div>
         <div id="tab-cancel" style="display:none">
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-grid" style="gap:10px;">
             <div class="form-group"><label>이름 (회원 등록 이름)</label><input id="cancel-name" placeholder="홍길동"></div>
             <div class="form-group"><label>전화번호 (회원 등록 번호)</label><input id="cancel-phone" placeholder="010-0000-0000"></div>
           </div>
@@ -549,3 +548,193 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape')
     document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
 });
+
+// ════════════════════════════════════════════════════════════
+// 홈 페이지
+// ════════════════════════════════════════════════════════════
+let homeMeetings = [];      // 전체 모임 목록 (날짜순)
+let homeIdx = 0;            // 현재 보고 있는 모임 인덱스
+let homeParticipants = [];  // 현재 모임 참가자 전체
+
+async function renderHomePage() {
+  try {
+    const all = await DB.getMeetings();
+    // 오늘 이후 예정 모임 먼저, 없으면 지난 모임 역순으로
+    const now = new Date(new Date().toDateString());
+    const upcoming = all.filter(m => new Date(m.date) >= now);
+    const past     = all.filter(m => new Date(m.date) <  now).reverse();
+    homeMeetings = [...upcoming, ...past];
+
+    if (!homeMeetings.length) {
+      homeIdx = 0;
+      renderHomeMeetingCard(null);
+      return;
+    }
+    homeIdx = 0;
+    await renderHomeMeetingCard(homeMeetings[homeIdx]);
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function renderHomeMeetingCard(meeting) {
+  const infoEl   = document.getElementById('home-meeting-info');
+  const prevBtn  = document.getElementById('home-btn-prev');
+  const nextBtn  = document.getElementById('home-btn-next');
+  const wrapEl   = document.getElementById('home-participants-wrap');
+
+  // 버튼 활성/비활성
+  prevBtn.disabled = (homeIdx <= 0);
+  nextBtn.disabled = (homeIdx >= homeMeetings.length - 1);
+
+  if (!meeting) {
+    infoEl.innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="empty-icon">🏌️</div>
+        <p>등록된 모임이 없습니다.</p>
+      </div>`;
+    wrapEl.style.display = 'none';
+    return;
+  }
+
+  // 참가자 로드
+  homeParticipants = await DB.getParticipants(meeting.id);
+  const cnt = homeParticipants.length;
+
+  infoEl.innerHTML = `
+    <div class="home-meeting-place">📍 ${meeting.place}</div>
+    <div class="home-meeting-meta">
+      <div class="home-meta-item">📅 <strong>${formatDate(meeting.date)}</strong></div>
+      <div class="home-meta-item">⏰ <strong>${meeting.time ? formatTime(meeting.time) : '시간 미정'}</strong></div>
+    </div>
+    <div class="home-count-badge">
+      👥 참가 신청 <span class="home-count-num" id="home-count-num">${cnt}</span>명
+    </div>
+    <div class="home-action-btns">
+      <button class="btn btn-primary" onclick="homeOpenJoinForm('${meeting.id}')">✋ 참가 신청</button>
+    </div>
+    ${homeMeetings.length > 1 ? `
+    <div class="home-meeting-index">${homeIdx + 1} / ${homeMeetings.length}</div>` : ''}
+  `;
+
+  // 참가자 목록 표시
+  wrapEl.style.display = 'block';
+  document.getElementById('home-participant-count').textContent = `${cnt}명 신청`;
+  document.getElementById('home-search').value = '';
+  renderHomeParticipantTable(homeParticipants);
+}
+
+// 이전/다음 모임 이동
+window.homeMoveMeeting = async function(dir) {
+  const next = homeIdx + dir;
+  if (next < 0 || next >= homeMeetings.length) return;
+  homeIdx = next;
+  await renderHomeMeetingCard(homeMeetings[homeIdx]);
+};
+
+// 참가자 테이블 렌더링 (회원 탭과 동일 형태)
+function renderHomeParticipantTable(list) {
+  const el = document.getElementById('home-participant-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px 0">
+      <div class="empty-icon">👥</div><p>신청자가 없습니다.</p></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr>
+          <th>이름</th><th>전화번호</th><th>신청일시</th>
+        </tr></thead>
+        <tbody>
+          ${list.map(p => `
+            <tr>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.phone}</td>
+              <td>${p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('ko-KR',
+                   {month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '-'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:10px; font-size:0.78rem; color:var(--ink-soft);">총 ${list.length}명</p>
+  `;
+}
+
+// 참가자 검색
+window.homeSearchParticipants = function() {
+  const q = document.getElementById('home-search').value.trim().toLowerCase();
+  if (!q) {
+    renderHomeParticipantTable(homeParticipants);
+    return;
+  }
+  const filtered = homeParticipants.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.phone.replace(/-/g, '').includes(q.replace(/-/g, ''))
+  );
+  renderHomeParticipantTable(filtered);
+};
+
+// 참가 신청 폼 열기
+window.homeOpenJoinForm = function(meetingId) {
+  document.getElementById('home-join-meeting-id').value = meetingId;
+  document.getElementById('home-join-name').value  = '';
+  document.getElementById('home-join-phone').value = '';
+  document.getElementById('home-join-error').style.display = 'none';
+  openModal('modal-home-join');
+};
+
+// 참가 신청 처리 (신청 또는 취소 분기)
+window.homeSubmitJoin = async function() {
+  const meetingId = document.getElementById('home-join-meeting-id').value;
+  const name      = document.getElementById('home-join-name').value.trim();
+  const phone     = document.getElementById('home-join-phone').value.trim();
+  const errEl     = document.getElementById('home-join-error');
+
+  if (!name || !phone) {
+    errEl.style.display = 'block';
+    errEl.textContent   = '이름과 전화번호를 입력해주세요.';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('btn-home-join-submit');
+  setLoading(btn, true, '확인 중');
+
+  try {
+    // 이미 신청한 사람인지 확인
+    const already = homeParticipants.find(p => p.name === name && p.phone === phone);
+
+    if (already) {
+      // 취소 확인 팝업
+      setLoading(btn, false, '신청하기');
+      closeModal('modal-home-join');
+      if (!confirm(`${name}님은 이미 참가 신청하셨습니다.\n참가를 취소하시겠습니까?`)) return;
+
+      // 취소 처리
+      await DB.cancelMeeting(meetingId, name, phone);
+      showToast(`${name}님의 참가가 취소되었습니다.`);
+    } else {
+      // 신청 처리
+      await DB.joinMeeting(meetingId, name, phone);
+      closeModal('modal-home-join');
+      showToast(`${name}님의 참가 신청이 완료되었습니다.`);
+    }
+
+    // 화면 갱신
+    homeParticipants = await DB.getParticipants(meetingId);
+    const cnt = homeParticipants.length;
+    const countEl = document.getElementById('home-count-num');
+    if (countEl) countEl.textContent = cnt;
+    document.getElementById('home-participant-count').textContent = `${cnt}명 신청`;
+    document.getElementById('home-search').value = '';
+    renderHomeParticipantTable(homeParticipants);
+
+  } catch(e) {
+    errEl.style.display = 'block';
+    errEl.textContent   = e.message;
+    setLoading(btn, false, '신청하기');
+  } finally {
+    if (btn) setLoading(btn, false, '신청하기');
+  }
+};

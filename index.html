@@ -7,7 +7,7 @@
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>동창 골프 모임</title>
-  <link rel="stylesheet" href="css/style.css?v=20260618">
+  <link rel="stylesheet" href="css/style.css?v=20260620">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>">
 </head>
 <body>
@@ -26,6 +26,7 @@
         </div>
       </a>
       <nav class="main-nav">
+        <a href="#" data-page="home">🏠 홈</a>
         <a href="#" data-page="members">👥 회원</a>
         <a href="#" data-page="calendar">📅 모임</a>
         <a href="#" data-page="admin" class="nav-admin-btn" id="admin-nav-btn">🔑 관리자</a>
@@ -36,6 +37,50 @@
   <!-- 메인 콘텐츠 -->
   <main class="main-wrap">
 
+    <!-- ── 홈 페이지 ── -->
+    <section id="page-home" class="page-section">
+      <div class="page-hero">
+        <h1>동창 골프 모임</h1>
+        <div class="hero-divider"></div>
+        <p>가장 가까운 모임 일정을 확인하고 참가 신청하세요.</p>
+      </div>
+
+      <!-- 모임 카드 -->
+      <div id="home-meeting-card" class="home-meeting-card">
+        <div class="home-meeting-nav">
+          <button id="home-btn-prev" class="home-nav-btn" onclick="homeMoveMeeting(-1)">&#8249;</button>
+          <div id="home-meeting-info" class="home-meeting-info">
+            <div class="empty-state" style="padding:32px 0">
+              <div class="empty-icon">🏌️</div>
+              <p>등록된 모임이 없습니다.</p>
+            </div>
+          </div>
+          <button id="home-btn-next" class="home-nav-btn" onclick="homeMoveMeeting(1)">&#8250;</button>
+        </div>
+      </div>
+
+      <!-- 참가자 목록 -->
+      <div id="home-participants-wrap" style="display:none; margin-top:24px;">
+        <div class="card">
+          <div class="card-header">
+            <h2>참가 신청 명단</h2>
+            <p id="home-participant-count">0명 신청</p>
+          </div>
+          <div class="card-body" style="padding:16px 16px 8px;">
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+              <input id="home-search" placeholder="이름 또는 전화번호 검색"
+                style="flex:1; padding:9px 13px; border:1.5px solid var(--line); border-radius:8px;
+                       font-size:0.875rem; font-family:inherit; outline:none;"
+                onkeyup="homeSearchParticipants()">
+              <button class="btn btn-outline btn-sm"
+                onclick="document.getElementById('home-search').value=''; homeSearchParticipants()">초기화</button>
+            </div>
+            <div id="home-participant-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ── 회원 신상정보 페이지 ── -->
     <section id="page-members" class="page-section">
       <div class="page-hero">
@@ -44,13 +89,13 @@
         <p>동창 골프 모임 회원들의 정보를 확인하세요.</p>
       </div>
 
-      <div style="display:flex; gap:12px; margin-bottom:24px; align-items:center; flex-wrap:wrap;">
-        <div class="search-bar" style="flex:1; margin:0; min-width:240px;">
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+        <div class="search-bar" style="margin:0;">
           <input id="member-search" placeholder="이름 또는 전화번호로 검색" onkeyup="if(event.key==='Enter') searchMembers()">
           <button class="btn btn-outline" onclick="searchMembers()">검색</button>
           <button class="btn btn-outline" onclick="document.getElementById('member-search').value=''; searchMembers()">초기화</button>
         </div>
-        <button class="btn btn-primary" onclick="openAddMemberGlobal()">+ 회원 등록</button>
+        <button class="btn btn-primary" style="width:100%;" onclick="openAddMemberGlobal()">+ 회원 등록</button>
       </div>
 
       <div class="card">
@@ -137,29 +182,29 @@
         <div class="admin-badge">⚙ 관리자 모드 활성화</div>
 
         <!-- 통계 카드 -->
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px;">
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px;">
           <div class="card" style="text-align:center;">
             <div class="card-body">
-              <div style="font-size:1.8rem; font-weight:700; color:var(--green-deep); font-family:'Playfair Display',serif" id="stat-members">-</div>
+              <div style="font-size:clamp(1.2rem, 4vw, 1.8rem); font-weight:700; color:var(--green-deep); font-family:'Playfair Display',serif" id="stat-members">-</div>
               <div style="font-size:0.8rem; color:var(--ink-soft); margin-top:4px;">등록 회원</div>
             </div>
           </div>
           <div class="card" style="text-align:center;">
             <div class="card-body">
-              <div style="font-size:1.8rem; font-weight:700; color:var(--green-deep); font-family:'Playfair Display',serif" id="stat-meetings">-</div>
+              <div style="font-size:clamp(1.2rem, 4vw, 1.8rem); font-weight:700; color:var(--green-deep); font-family:'Playfair Display',serif" id="stat-meetings">-</div>
               <div style="font-size:0.8rem; color:var(--ink-soft); margin-top:4px;">전체 모임</div>
             </div>
           </div>
           <div class="card" style="text-align:center;">
             <div class="card-body">
-              <div style="font-size:1.8rem; font-weight:700; color:var(--gold); font-family:'Playfair Display',serif" id="stat-upcoming">-</div>
+              <div style="font-size:clamp(1.2rem, 4vw, 1.8rem); font-weight:700; color:var(--gold); font-family:'Playfair Display',serif" id="stat-upcoming">-</div>
               <div style="font-size:0.8rem; color:var(--ink-soft); margin-top:4px;">예정 모임</div>
             </div>
           </div>
         </div>
 
         <!-- 관리자 메뉴 -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:32px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:24px;">
           <div class="card">
             <div class="card-body">
               <h3 style="font-size:0.95rem; margin-bottom:12px; color:var(--green-deep);">👥 회원 관리</h3>
@@ -227,10 +272,6 @@
           <div class="form-group">
             <label>전화번호 *</label>
             <input id="inp-phone" placeholder="010-0000-0000" required>
-          </div>
-          <div class="form-group">
-            <label>나이</label>
-            <input id="inp-age" placeholder="예: 45" type="number" min="1" max="120">
           </div>
           <div class="form-group">
             <label>성별</label>
@@ -316,8 +357,44 @@
   </div>
 </div>
 
-<script src="js/db.js?v=20260618"></script>
-<script src="js/app.js?v=20260618"></script>
+<!-- 홈 — 참가 신청/취소 모달 -->
+<div class="modal-overlay" id="modal-home-join">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>참가 신청</h3>
+      <button class="modal-close" onclick="closeModal('modal-home-join')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="home-join-meeting-id">
+      <p style="font-size:0.82rem; color:var(--ink-soft); background:var(--green-light);
+                border-radius:8px; padding:10px 14px; margin-bottom:16px; line-height:1.6;">
+        ℹ️ <strong>회원 등록 시 입력한 이름과 전화번호</strong>를 입력해주세요.<br>
+        이미 신청한 경우 참가 취소로 전환됩니다.
+      </p>
+      <div class="home-join-form">
+        <div class="form-group">
+          <label>이름</label>
+          <input id="home-join-name" placeholder="홍길동">
+        </div>
+        <div class="form-group">
+          <label>전화번호</label>
+          <input id="home-join-phone" placeholder="010-0000-0000"
+            onkeydown="if(event.key==='Enter') homeSubmitJoin()">
+        </div>
+      </div>
+      <div id="home-join-error" style="display:none; margin-top:12px;
+           background:#fdecea; color:#c0392b; border-radius:8px;
+           padding:10px 14px; font-size:0.85rem;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-home-join')">취소</button>
+      <button id="btn-home-join-submit" class="btn btn-primary" onclick="homeSubmitJoin()">신청하기</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js?v=20260620"></script>
+<script src="js/app.js?v=20260620"></script>
 
 </body>
 </html>
