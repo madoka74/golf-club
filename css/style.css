@@ -1044,3 +1044,134 @@ body {
   .main-wrap { padding: 14px 10px 80px; }
   .page-hero h1 { font-size: 1.2rem; }
 }
+
+/* ===== HOME PAGE ===== */
+.home-meeting-card {
+  background: var(--white);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.home-meeting-nav {
+  display: flex;
+  align-items: stretch;
+}
+
+.home-nav-btn {
+  background: none;
+  border: none;
+  color: var(--green-fairway);
+  font-size: 2.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 18px;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-nav-btn:hover:not(:disabled) {
+  background: var(--green-light);
+  color: var(--green-deep);
+}
+
+.home-nav-btn:disabled {
+  color: var(--line);
+  cursor: default;
+}
+
+.home-meeting-info {
+  flex: 1;
+  padding: 28px 8px;
+  text-align: center;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.home-meeting-place {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  margin-bottom: 10px;
+}
+
+.home-meeting-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.home-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.home-meta-item strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.home-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-light);
+  color: var(--green-deep);
+  border-radius: 20px;
+  padding: 5px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.home-count-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--green-fairway);
+}
+
+.home-action-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.home-meeting-index {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  margin-top: 14px;
+  letter-spacing: 0.05em;
+}
+
+/* 참가자 테이블 (회원 탭과 동일 스타일 재사용) */
+#home-participant-list .data-table {
+  font-size: 0.85rem;
+}
+
+/* 참가/취소 입력 모달 내부 */
+.home-join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── 모바일 홈 ── */
+@media (max-width: 480px) {
+  .home-nav-btn { padding: 0 10px; font-size: 2rem; }
+  .home-meeting-place { font-size: 1.2rem; }
+  .home-meeting-info { padding: 22px 4px; }
+  .home-meta-item { font-size: 0.8rem; }
+  .home-action-btns .btn { flex: 1; }
+}
