@@ -18,11 +18,10 @@ const DB = {
   // localStorage / setConfig / clearConfig 불필요 — 코드에 고정
   init() {},
 
-  isConfigured() {
-    return !!(this.binId && this.binId !== '6a2eb861da38895dfebeeec8' &&
-              this.apiKey && this.apiKey !== '$2a$10$NLeMDw1t.Cmnk2PRS7iLSODNABla00y.Wj0LT8rIGMj8EUupMhQ4C');
+isConfigured() {
+    return !!(this.binId && this.apiKey);
   },
-
+  
   // setConfig / clearConfig 제거됨 (코드에 직접 입력 방식)
 
   // ─── JSONBin API 호출 ─────────────────────────────────
