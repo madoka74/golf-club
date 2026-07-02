@@ -245,6 +245,18 @@ const DB = {
   async verifyAdmin(id, pw) {
     const d = await this.load();
     return d.admin.id === id && d.admin.pw === pw;
+  },
+
+  // ─── 모임 안내 메시지 (홈 화면 상단 배너) ───────────────
+  async getNotice() {
+    const d = await this.load();
+    return d.notice || '';
+  },
+
+  async setNotice(message) {
+    const d = await this.load();
+    d.notice = message || '';
+    await this.save(d);
   }
 };
 
@@ -274,6 +286,25 @@ function formatTime(t) {
   const hour = parseInt(h);
   return `${hour < 12 ? '오전' : '오후'} ${hour > 12 ? hour - 12 : hour}:${m}`;
 }
+
+// 전화번호 3-4-4 자동 하이픈
+function formatPhoneValue(raw) {
+  const digits = (raw || '').replace(/[^0-9]/g, '').slice(0, 11);
+  if (digits.length < 4)  return digits;
+  if (digits.length < 8)  return digits.slice(0,3) + '-' + digits.slice(3);
+  return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7,11);
+}
+
+// input 요소에 실시간 적용
+function formatPhoneInput(el) {
+  const pos = el.selectionStart;
+  const before = el.value.length;
+  el.value = formatPhoneValue(el.value);
+  const after = el.value.length;
+  const diff = after - before;
+  try { el.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
+}
+window.formatPhoneInput = formatPhoneInput;
 
 function shuffleArray(arr) {
   const a = [...arr];

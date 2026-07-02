@@ -150,7 +150,7 @@ window.openEditMember = async function(id) {
     </p>
     <div class="form-grid">
       <div class="form-group"><label>이름</label><input id="edit-name" value="${m.name}"></div>
-      <div class="form-group"><label>전화번호 (본인확인·변경불가)</label><input id="edit-phone" value="${m.phone}" placeholder="010-0000-0000"></div>
+      <div class="form-group"><label>전화번호 (본인확인·변경불가)</label><input id="edit-phone" value="${m.phone}" placeholder="010-0000-0000" inputmode="numeric" maxlength="13" oninput="formatPhoneInput(this)"></div>
       <div class="form-group"><label>성별</label>
         <select id="edit-gender">
           <option value="">선택</option>
@@ -346,13 +346,18 @@ function meetingCardHTML(m) {
 // ─── 모임 상세 모달 ────────────────────────────────────────
 window.openMeetingModal = async function(id) {
   try {
-    const [meeting, participants, teamResult] = await Promise.all([
+    const isAdmin = AdminSession.isLoggedIn();
+    const [meeting, participants, teamResult, members] = await Promise.all([
       DB.getMeeting(id),
       DB.getParticipants(id),
-      DB.getTeamResult(id)
+      DB.getTeamResult(id),
+      isAdmin ? DB.getMembers() : Promise.resolve([])
     ]);
     if (!meeting) return;
     document.getElementById('meeting-modal-title').textContent = `${meeting.place} 모임`;
+
+    const memberMap = {};
+    members.forEach(m => { memberMap[m.id] = m; });
 
     document.getElementById('meeting-modal-body').innerHTML = `
       <div class="info-list" style="margin-bottom:20px;">
@@ -367,11 +372,23 @@ window.openMeetingModal = async function(id) {
       </div>
       <div class="participant-list">
         ${participants.length
-          ? participants.map(p => `
+          ? participants.map(p => {
+              if (isAdmin) {
+                const intro = (memberMap[p.memberId] && memberMap[p.memberId].intro) || '';
+                return `
+                  <div class="participant-item" style="align-items:flex-start;">
+                    <div style="flex-shrink:0;"><div class="p-name">${p.name}</div><div class="p-info">${p.phone}</div></div>
+                    <div style="flex:1; text-align:right; font-size:0.8rem; color:var(--ink-soft); line-height:1.5; white-space:pre-wrap; margin-left:14px;">
+                      ${intro ? intro : '<span style="opacity:0.5;">작성된 내용 없음</span>'}
+                    </div>
+                  </div>`;
+              }
+              return `
               <div class="participant-item">
                 <div><div class="p-name">${p.name}</div><div class="p-info">${p.phone}</div></div>
                 <span class="badge badge-green">신청완료</span>
-              </div>`).join('')
+              </div>`;
+            }).join('')
           : '<div class="empty-state" style="padding:20px"><p>아직 신청자가 없습니다.</p></div>'}
       </div>
 
@@ -408,14 +425,14 @@ window.openMeetingModal = async function(id) {
         <div id="tab-join">
           <div class="form-grid" style="gap:10px;">
             <div class="form-group"><label>이름 (회원 등록 이름)</label><input id="join-name" placeholder="홍길동"></div>
-            <div class="form-group"><label>전화번호 (회원 등록 번호)</label><input id="join-phone" placeholder="010-0000-0000"></div>
+            <div class="form-group"><label>전화번호 (회원 등록 번호)</label><input id="join-phone" placeholder="010-0000-0000" inputmode="numeric" maxlength="13" oninput="formatPhoneInput(this)"></div>
           </div>
           <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="joinMeeting('${id}')">신청하기</button>
         </div>
         <div id="tab-cancel" style="display:none">
           <div class="form-grid" style="gap:10px;">
             <div class="form-group"><label>이름 (회원 등록 이름)</label><input id="cancel-name" placeholder="홍길동"></div>
-            <div class="form-group"><label>전화번호 (회원 등록 번호)</label><input id="cancel-phone" placeholder="010-0000-0000"></div>
+            <div class="form-group"><label>전화번호 (회원 등록 번호)</label><input id="cancel-phone" placeholder="010-0000-0000" inputmode="numeric" maxlength="13" oninput="formatPhoneInput(this)"></div>
           </div>
           <button class="btn btn-danger btn-block" style="margin-top:14px" onclick="cancelMeeting('${id}')">취소하기</button>
         </div>
@@ -550,13 +567,31 @@ window.adminLogout = function() {
 
 async function renderAdminPanel() {
   try {
-    const [members, meetings] = await Promise.all([DB.getMembers(), DB.getMeetings()]);
+    const [members, meetings, notice] = await Promise.all([
+      DB.getMembers(), DB.getMeetings(), DB.getNotice()
+    ]);
     document.getElementById('stat-members').textContent  = members.length  + '명';
     document.getElementById('stat-meetings').textContent = meetings.length + '건';
     const upcoming = meetings.filter(m => new Date(m.date) >= new Date(new Date().toDateString())).length;
     document.getElementById('stat-upcoming').textContent = upcoming + '건';
+    document.getElementById('admin-notice-input').value = notice || '';
   } catch(e) {}
 }
+
+// 안내 메시지 저장
+window.submitAdminNotice = async function() {
+  const btn = document.getElementById('btn-save-notice');
+  const msg = document.getElementById('admin-notice-input').value.trim();
+  setLoading(btn, true, '저장');
+  try {
+    await DB.setNotice(msg);
+    showToast(msg ? '안내 메시지가 저장되었습니다.' : '안내 메시지가 비워졌습니다.');
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    setLoading(btn, false, '저장');
+  }
+};
 
 // ─── 모달 헬퍼 ────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
@@ -578,8 +613,27 @@ let homeMeetings = [];      // 전체 모임 목록 (날짜순)
 let homeIdx = 0;            // 현재 보고 있는 모임 인덱스
 let homeParticipants = [];  // 현재 모임 참가자 전체
 
+const DEFAULT_HOME_SUBTITLE = '가장 가까운 모임 일정을 확인하고 참가 신청하세요.';
+
 async function renderHomePage() {
   try {
+    // 관리자 안내 메시지 반영
+    const notice = await DB.getNotice();
+    const subtitleEl = document.getElementById('home-hero-subtitle');
+    if (subtitleEl) {
+      if (notice) {
+        subtitleEl.textContent = notice;
+        subtitleEl.style.fontSize = '1.05rem';
+        subtitleEl.style.fontWeight = '600';
+        subtitleEl.style.color = 'var(--green-deep)';
+      } else {
+        subtitleEl.textContent = DEFAULT_HOME_SUBTITLE;
+        subtitleEl.style.fontSize = '';
+        subtitleEl.style.fontWeight = '';
+        subtitleEl.style.color = '';
+      }
+    }
+
     const all = await DB.getMeetings();
     // 오늘 이후 예정 모임 먼저, 없으면 지난 모임 역순으로
     const now = new Date(new Date().toDateString());
@@ -675,7 +729,7 @@ function renderHomeParticipantTable(list) {
     <div style="overflow-x:auto;">
       <table class="data-table">
         <thead><tr>
-          <th>이름</th><th>성별</th><th>학과</th><th>학번</th><th>좋아요</th><th>상세</th>
+          <th>이름</th><th>성별</th><th>학과</th><th>학번</th><th>좋아요</th><th>상세보기</th>
         </tr></thead>
         <tbody>
           ${list.map(p => {
@@ -694,7 +748,7 @@ function renderHomeParticipantTable(list) {
               </td>
               <td>
                 ${p.memberId ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;"
-                  onclick="openMemberDetail('${p.memberId}')">보기</button>` : '-'}
+                  onclick="openMemberDetail('${p.memberId}')">상세보기</button>` : '-'}
               </td>
             </tr>`;
           }).join('')}
