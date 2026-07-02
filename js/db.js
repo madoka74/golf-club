@@ -19,8 +19,8 @@ const DB = {
   init() {},
 
   isConfigured() {
-    return !!(this.binId && this.binId !== 'YOUR_BIN_ID_HERE' &&
-              this.apiKey && this.apiKey !== 'YOUR_API_KEY_HERE');
+    return !!(this.binId && this.binId !== '6a2eb861da38895dfebeeec8' &&
+              this.apiKey && this.apiKey !== '$2a$10$NLeMDw1t.Cmnk2PRS7iLSODNABla00y.Wj0LT8rIGMj8EUupMhQ4C');
   },
 
   // setConfig / clearConfig 제거됨 (코드에 직접 입력 방식)
@@ -75,6 +75,21 @@ const DB = {
   async deleteMember(id) {
     const d = await this.load();
     d.members = d.members.filter(m => m.id !== id);
+
+    // 연동: 모든 모임의 참가자 목록에서도 제거
+    if (d.participants) {
+      Object.keys(d.participants).forEach(meetingId => {
+        d.participants[meetingId] = d.participants[meetingId].filter(p => p.memberId !== id);
+      });
+    }
+    // 연동: 팀 매칭 결과에서도 제거
+    if (d.teamResults) {
+      Object.keys(d.teamResults).forEach(meetingId => {
+        d.teamResults[meetingId] = d.teamResults[meetingId]
+          .map(team => team.filter(p => p.memberId !== id))
+          .filter(team => team.length > 0);
+      });
+    }
     await this.save(d);
   },
 
@@ -84,6 +99,24 @@ const DB = {
     if (idx === -1) throw new Error('회원을 찾을 수 없습니다.');
     if (d.members[idx].phone !== phone) throw new Error('전화번호가 일치하지 않습니다.');
     d.members[idx] = { ...d.members[idx], ...updates, id, phone };
+
+    // 연동: 이름이 바뀌면 참가자 목록/팀 결과의 표시 이름도 동기화
+    const newName = d.members[idx].name;
+    if (d.participants) {
+      Object.keys(d.participants).forEach(meetingId => {
+        d.participants[meetingId].forEach(p => {
+          if (p.memberId === id) p.name = newName;
+        });
+      });
+    }
+    if (d.teamResults) {
+      Object.keys(d.teamResults).forEach(meetingId => {
+        d.teamResults[meetingId].forEach(team => {
+          team.forEach(p => { if (p.memberId === id) p.name = newName; });
+        });
+      });
+    }
+
     await this.save(d);
     return d.members[idx];
   },
@@ -158,9 +191,22 @@ const DB = {
     d.participants[meetingId].push({
       name, phone,
       memberId: member.id,
+      likes: 0,
       joinedAt: new Date().toISOString()
     });
     await this.save(d);
+  },
+
+  // 참가자 좋아요 +1
+  async likeParticipant(meetingId, phone) {
+    const d = await this.load();
+    const list = d.participants?.[meetingId];
+    if (!list) throw new Error('참가자 정보를 찾을 수 없습니다.');
+    const p = list.find(x => x.phone === phone);
+    if (!p) throw new Error('참가자를 찾을 수 없습니다.');
+    p.likes = (p.likes || 0) + 1;
+    await this.save(d);
+    return p.likes;
   },
 
   async cancelMeeting(meetingId, name, phone) {

@@ -122,6 +122,10 @@ window.openMemberDetail = async function(id) {
         ${row('학과', m.dept||'-')}  ${row('학번', m.studentId||'-')}
         ${row('직장', m.company||'-')} ${row('직책', m.position||'-')}
       </div>
+      <div style="margin-top:14px; padding:12px 14px; background:var(--green-light); border-radius:8px;">
+        <div style="font-size:0.72rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px;">자기소개</div>
+        <div style="font-size:0.875rem; color:var(--ink); line-height:1.6; white-space:pre-wrap;">${m.intro ? m.intro : '작성된 자기소개가 없습니다.'}</div>
+      </div>
       <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="openEditMember('${m.id}')">✏️ 정보 수정</button>
         ${AdminSession.isLoggedIn() ? `
@@ -158,6 +162,11 @@ window.openEditMember = async function(id) {
       <div class="form-group"><label>학번</label><input id="edit-studentid" value="${m.studentId||''}"></div>
       <div class="form-group"><label>직장</label><input id="edit-company" value="${m.company||''}"></div>
       <div class="form-group"><label>직책</label><input id="edit-position" value="${m.position||''}"></div>
+      <div class="form-group full-width"><label>자기소개</label>
+        <textarea id="edit-intro" placeholder="간단한 자기소개를 남겨주세요."
+          style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px;
+                 font-size:0.9rem; font-family:inherit; min-height:70px; resize:vertical; width:100%;">${m.intro||''}</textarea>
+      </div>
     </div>
     <div style="display:flex; gap:10px; margin-top:20px;">
       <button class="btn btn-outline btn-sm" onclick="openMemberDetail('${id}')">← 취소</button>
@@ -176,7 +185,8 @@ window.submitEditMember = async function(id) {
     await DB.updateMember(id, phone, {
       name, gender: v('edit-gender'),
       dept: v('edit-dept'), studentId: v('edit-studentid'),
-      company: v('edit-company'), position: v('edit-position')
+      company: v('edit-company'), position: v('edit-position'),
+      intro: v('edit-intro')
     });
     showToast(`${name} 회원 정보가 수정되었습니다.`);
     closeModal('modal-member-detail');
@@ -210,7 +220,8 @@ window.submitAddMember = async function() {
     await DB.addMember({
       name, phone, gender: v('inp-gender'),
       dept: v('inp-dept'), studentId: v('inp-studentid'),
-      company: v('inp-company'), position: v('inp-position')
+      company: v('inp-company'), position: v('inp-position'),
+      intro: v('inp-intro')
     });
     closeModal('modal-add-member');
     document.getElementById('form-add-member').reset();
@@ -597,8 +608,9 @@ async function renderHomeMeetingCard(meeting) {
     return;
   }
 
-  // 참가자 로드
+  // 참가자 로드 (+ 회원 최신정보 매핑)
   homeParticipants = await DB.getParticipants(meeting.id);
+  await loadHomeMembersMap();
   const cnt = homeParticipants.length;
 
   infoEl.innerHTML = `
@@ -632,7 +644,15 @@ window.homeMoveMeeting = async function(dir) {
   await renderHomeMeetingCard(homeMeetings[homeIdx]);
 };
 
-// 참가자 테이블 렌더링 (회원 탭과 동일 형태)
+// 참가자 테이블 렌더링 — 이름/성별/학과/학번/좋아요/상세보기
+let homeMembersMap = {}; // memberId -> member (최신 정보 매핑용)
+
+async function loadHomeMembersMap() {
+  const members = await DB.getMembers();
+  homeMembersMap = {};
+  members.forEach(m => { homeMembersMap[m.id] = m; });
+}
+
 function renderHomeParticipantTable(list) {
   const el = document.getElementById('home-participant-list');
   if (!list.length) {
@@ -644,22 +664,51 @@ function renderHomeParticipantTable(list) {
     <div style="overflow-x:auto;">
       <table class="data-table">
         <thead><tr>
-          <th>이름</th><th>전화번호</th><th>신청일시</th>
+          <th>이름</th><th>성별</th><th>학과</th><th>학번</th><th>좋아요</th><th>상세</th>
         </tr></thead>
         <tbody>
-          ${list.map(p => `
+          ${list.map(p => {
+            const m = homeMembersMap[p.memberId] || {};
+            return `
             <tr>
               <td><strong>${p.name}</strong></td>
-              <td>${p.phone}</td>
-              <td>${p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('ko-KR',
-                   {month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '-'}</td>
-            </tr>`).join('')}
+              <td>${m.gender || '-'}</td>
+              <td>${m.dept || '-'}</td>
+              <td>${m.studentId || '-'}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" style="padding:4px 10px;"
+                  onclick="homeLikeParticipant('${p.phone}', this)">
+                  👍 <span class="like-count">${p.likes || 0}</span>
+                </button>
+              </td>
+              <td>
+                ${p.memberId ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;"
+                  onclick="openMemberDetail('${p.memberId}')">보기</button>` : '-'}
+              </td>
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>
     <p style="margin-top:10px; font-size:0.78rem; color:var(--ink-soft);">총 ${list.length}명</p>
   `;
 }
+
+// 좋아요 클릭
+window.homeLikeParticipant = async function(phone, btnEl) {
+  const meetingId = homeMeetings[homeIdx]?.id;
+  if (!meetingId) return;
+  try {
+    const newCount = await DB.likeParticipant(meetingId, phone);
+    // 로컬 캐시도 갱신
+    const p = homeParticipants.find(x => x.phone === phone);
+    if (p) p.likes = newCount;
+    const span = btnEl.querySelector('.like-count');
+    if (span) span.textContent = newCount;
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+};
 
 // 참가자 검색
 window.homeSearchParticipants = function() {
@@ -681,15 +730,22 @@ window.homeOpenJoinForm = function(meetingId) {
   document.getElementById('home-join-name').value  = '';
   document.getElementById('home-join-phone').value = '';
   document.getElementById('home-join-error').style.display = 'none';
+  document.getElementById('home-join-register-section').style.display = 'none';
+  // 신규가입 필드 초기화
+  ['home-reg-gender','home-reg-dept','home-reg-studentid','home-reg-company','home-reg-position','home-reg-intro']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('btn-home-join-submit').textContent = '신청하기';
   openModal('modal-home-join');
 };
 
-// 참가 신청 처리 (신청 또는 취소 분기)
+// 참가 신청 처리 (신청 / 취소 / 미등록 시 자동가입 3분기)
 window.homeSubmitJoin = async function() {
   const meetingId = document.getElementById('home-join-meeting-id').value;
   const name      = document.getElementById('home-join-name').value.trim();
   const phone     = document.getElementById('home-join-phone').value.trim();
   const errEl     = document.getElementById('home-join-error');
+  const regSection = document.getElementById('home-join-register-section');
+  const isRegisterMode = regSection.style.display !== 'none';
 
   if (!name || !phone) {
     errEl.style.display = 'block';
@@ -699,42 +755,85 @@ window.homeSubmitJoin = async function() {
   errEl.style.display = 'none';
 
   const btn = document.getElementById('btn-home-join-submit');
-  setLoading(btn, true, '확인 중');
 
+  // ── 신규가입 모드: 회원가입 후 바로 참가신청 ──
+  if (isRegisterMode) {
+    setLoading(btn, true, '가입 처리 중');
+    try {
+      const v = id => document.getElementById(id).value.trim();
+      await DB.addMember({
+        name, phone,
+        gender: v('home-reg-gender'),
+        dept: v('home-reg-dept'),
+        studentId: v('home-reg-studentid'),
+        company: v('home-reg-company'),
+        position: v('home-reg-position'),
+        intro: v('home-reg-intro')
+      });
+      await DB.joinMeeting(meetingId, name, phone);
+      closeModal('modal-home-join');
+      showToast(`${name}님 회원가입과 참가 신청이 완료되었습니다! 🎉`);
+      await refreshHomeParticipants(meetingId);
+    } catch(e) {
+      errEl.style.display = 'block';
+      errEl.textContent   = e.message;
+    } finally {
+      setLoading(btn, false, '신청하기');
+    }
+    return;
+  }
+
+  // ── 일반 모드: 신청/취소/미등록 판별 ──
+  setLoading(btn, true, '확인 중');
   try {
     // 이미 신청한 사람인지 확인
     const already = homeParticipants.find(p => p.name === name && p.phone === phone);
 
     if (already) {
-      // 취소 확인 팝업
       setLoading(btn, false, '신청하기');
       closeModal('modal-home-join');
       if (!confirm(`${name}님은 이미 참가 신청하셨습니다.\n참가를 취소하시겠습니까?`)) return;
-
-      // 취소 처리
       await DB.cancelMeeting(meetingId, name, phone);
       showToast(`${name}님의 참가가 취소되었습니다.`);
-    } else {
-      // 신청 처리
+      await refreshHomeParticipants(meetingId);
+      return;
+    }
+
+    // 신청 시도
+    try {
       await DB.joinMeeting(meetingId, name, phone);
       closeModal('modal-home-join');
       showToast(`${name}님의 참가 신청이 완료되었습니다.`);
+      await refreshHomeParticipants(meetingId);
+    } catch(joinErr) {
+      // 미등록 회원 → 가입 섹션 펼치기
+      if (joinErr.message.includes('등록된 회원')) {
+        regSection.style.display = 'block';
+        btn.textContent = '가입하고 신청하기';
+        errEl.style.display = 'block';
+        errEl.textContent = '등록되지 않은 회원입니다. 아래 정보를 입력해주세요.';
+      } else {
+        throw joinErr;
+      }
     }
-
-    // 화면 갱신
-    homeParticipants = await DB.getParticipants(meetingId);
-    const cnt = homeParticipants.length;
-    const countEl = document.getElementById('home-count-num');
-    if (countEl) countEl.textContent = cnt;
-    document.getElementById('home-participant-count').textContent = `${cnt}명 신청`;
-    document.getElementById('home-search').value = '';
-    renderHomeParticipantTable(homeParticipants);
-
   } catch(e) {
     errEl.style.display = 'block';
     errEl.textContent   = e.message;
-    setLoading(btn, false, '신청하기');
   } finally {
-    if (btn) setLoading(btn, false, '신청하기');
+    setLoading(btn, false, isRegisterMode ? '신청하기' : (regSection.style.display !== 'none' ? '가입하고 신청하기' : '신청하기'));
   }
 };
+
+// 참가자 정보 갱신 공통 함수
+async function refreshHomeParticipants(meetingId) {
+  homeParticipants = await DB.getParticipants(meetingId);
+  await loadHomeMembersMap();
+  const cnt = homeParticipants.length;
+  const countEl = document.getElementById('home-count-num');
+  if (countEl) countEl.textContent = cnt;
+  const countLabel = document.getElementById('home-participant-count');
+  if (countLabel) countLabel.textContent = `${cnt}명 신청`;
+  const searchEl = document.getElementById('home-search');
+  if (searchEl) searchEl.value = '';
+  renderHomeParticipantTable(homeParticipants);
+}

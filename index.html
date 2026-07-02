@@ -7,7 +7,7 @@
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>동창 골프 모임</title>
-  <link rel="stylesheet" href="css/style.css?v=20260620">
+  <link rel="stylesheet" href="css/style.css?v=20260702">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>">
 </head>
 <body>
@@ -297,6 +297,12 @@
             <label>직책</label>
             <input id="inp-position" placeholder="예: 부장">
           </div>
+          <div class="form-group full-width">
+            <label>자기소개</label>
+            <textarea id="inp-intro" placeholder="간단한 자기소개를 남겨주세요."
+              style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px;
+                     font-size:0.9rem; font-family:inherit; min-height:70px; resize:vertical;"></textarea>
+          </div>
         </div>
       </form>
     </div>
@@ -382,6 +388,35 @@
             onkeydown="if(event.key==='Enter') homeSubmitJoin()">
         </div>
       </div>
+
+      <!-- 미등록 회원 감지 시 표시되는 간단 가입 섹션 -->
+      <div id="home-join-register-section" style="display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);">
+        <p style="font-size:0.82rem; color:var(--green-deep); background:var(--gold-light);
+                  border-radius:8px; padding:10px 14px; margin-bottom:14px; line-height:1.6; font-weight:600;">
+          🆕 등록되지 않은 회원입니다. 아래 정보를 입력하면 회원가입과 동시에 참가 신청이 완료됩니다.
+        </p>
+        <div class="home-join-form">
+          <div class="form-group">
+            <label>성별</label>
+            <select id="home-reg-gender">
+              <option value="">선택</option>
+              <option value="남">남</option>
+              <option value="여">여</option>
+            </select>
+          </div>
+          <div class="form-group"><label>학과</label><input id="home-reg-dept" placeholder="예: 경영학과"></div>
+          <div class="form-group"><label>학번</label><input id="home-reg-studentid" placeholder="예: 98학번"></div>
+          <div class="form-group"><label>직장</label><input id="home-reg-company" placeholder="예: (주)삼성전자"></div>
+          <div class="form-group"><label>직책</label><input id="home-reg-position" placeholder="예: 부장"></div>
+          <div class="form-group">
+            <label>자기소개</label>
+            <textarea id="home-reg-intro" placeholder="간단한 자기소개를 남겨주세요."
+              style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px;
+                     font-size:0.9rem; font-family:inherit; min-height:60px; resize:vertical;"></textarea>
+          </div>
+        </div>
+      </div>
+
       <div id="home-join-error" style="display:none; margin-top:12px;
            background:#fdecea; color:#c0392b; border-radius:8px;
            padding:10px 14px; font-size:0.85rem;"></div>
@@ -393,8 +428,8 @@
   </div>
 </div>
 
-<script src="js/db.js?v=20260621"></script>
-<script src="js/app.js?v=20260621"></script>
+<script src="js/db.js?v=20260702"></script>
+<script src="js/app.js?v=20260702"></script>
 
 </body>
 </html>
