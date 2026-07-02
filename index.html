@@ -6,8 +6,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>동창 골프 모임</title>
-  <link rel="stylesheet" href="css/style.css?v=20260702">
+  <title>서울 상대 골프 네트워크</title>
+  <link rel="stylesheet" href="css/style.css?v=20260704">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>">
 </head>
 <body>
@@ -21,8 +21,8 @@
       <a href="#" class="logo" onclick="return false;">
         <div class="logo-icon">⛳</div>
         <div class="logo-text">
-          동창 골프 모임
-          <span class="logo-sub">ALUMNI GOLF CLUB</span>
+          서울 상대 골프 네트워크
+          <span class="logo-sub">SNU B&E GOLF NETWORK</span>
         </div>
       </a>
       <nav class="main-nav">
@@ -40,7 +40,7 @@
     <!-- ── 홈 페이지 ── -->
     <section id="page-home" class="page-section">
       <div class="page-hero">
-        <h1>동창 골프 모임</h1>
+        <h1>서울 상대 골프 네트워크</h1>
         <div class="hero-divider"></div>
         <p>가장 가까운 모임 일정을 확인하고 참가 신청하세요.</p>
       </div>
@@ -86,7 +86,7 @@
       <div class="page-hero">
         <h1>회원 신상정보</h1>
         <div class="hero-divider"></div>
-        <p>동창 골프 모임 회원들의 정보를 확인하세요.</p>
+        <p>서울 상대 골프 네트워크 회원들의 정보를 확인하세요.</p>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
@@ -283,11 +283,18 @@
           </div>
           <div class="form-group">
             <label>학과</label>
-            <input id="inp-dept" placeholder="예: 경영학과">
+            <select id="inp-dept">
+              <option value="">선택</option>
+              <option value="경영학과">경영학과</option>
+              <option value="경제학과">경제학과</option>
+              <option value="국제경제학과">국제경제학과</option>
+              <option value="상학과">상학과</option>
+            </select>
           </div>
           <div class="form-group">
             <label>학번</label>
-            <input id="inp-studentid" placeholder="예: 98학번">
+            <input id="inp-studentid" placeholder="예: 98" inputmode="numeric"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'')">
           </div>
           <div class="form-group">
             <label>직장</label>
@@ -298,8 +305,8 @@
             <input id="inp-position" placeholder="예: 부장">
           </div>
           <div class="form-group full-width">
-            <label>자기소개</label>
-            <textarea id="inp-intro" placeholder="간단한 자기소개를 남겨주세요."
+            <label>자기소개 및 요구사항</label>
+            <textarea id="inp-intro" placeholder="간단한 자기소개와 원하는 라운딩 스타일 등을 남겨주세요."
               style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px;
                      font-size:0.9rem; font-family:inherit; min-height:70px; resize:vertical;"></textarea>
           </div>
@@ -404,13 +411,24 @@
               <option value="여">여</option>
             </select>
           </div>
-          <div class="form-group"><label>학과</label><input id="home-reg-dept" placeholder="예: 경영학과"></div>
-          <div class="form-group"><label>학번</label><input id="home-reg-studentid" placeholder="예: 98학번"></div>
+          <div class="form-group"><label>학과</label>
+            <select id="home-reg-dept">
+              <option value="">선택</option>
+              <option value="경영학과">경영학과</option>
+              <option value="경제학과">경제학과</option>
+              <option value="국제경제학과">국제경제학과</option>
+              <option value="상학과">상학과</option>
+            </select>
+          </div>
+          <div class="form-group"><label>학번</label>
+            <input id="home-reg-studentid" placeholder="예: 98" inputmode="numeric"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          </div>
           <div class="form-group"><label>직장</label><input id="home-reg-company" placeholder="예: (주)삼성전자"></div>
           <div class="form-group"><label>직책</label><input id="home-reg-position" placeholder="예: 부장"></div>
           <div class="form-group">
-            <label>자기소개</label>
-            <textarea id="home-reg-intro" placeholder="간단한 자기소개를 남겨주세요."
+            <label>자기소개 및 요구사항</label>
+            <textarea id="home-reg-intro" placeholder="간단한 자기소개와 원하는 라운딩 스타일 등을 남겨주세요."
               style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px;
                      font-size:0.9rem; font-family:inherit; min-height:60px; resize:vertical;"></textarea>
           </div>
@@ -428,8 +446,8 @@
   </div>
 </div>
 
-<script src="js/db.js?v=20260702"></script>
-<script src="js/app.js?v=20260702"></script>
+<script src="js/db.js?v=20260704"></script>
+<script src="js/app.js?v=20260704"></script>
 
 </body>
 </html>

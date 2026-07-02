@@ -71,10 +71,11 @@ body {
 .logo-text {
   font-family: 'Playfair Display', serif;
   color: var(--white);
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .logo-sub {
@@ -942,8 +943,8 @@ body {
   .site-header { position: sticky; top: 0; }
   .header-inner { height: 52px; padding: 0 12px; }
   .logo-sub { display: none; }           /* 영문 서브타이틀 숨김 */
-  .logo-text { font-size: 0.85rem; }
-  .logo-icon { width: 28px; height: 28px; font-size: 14px; }
+  .logo-text { font-size: 0.72rem; }
+  .logo-icon { width: 26px; height: 26px; font-size: 13px; }
 
   /* 네비 — 아이콘+텍스트 작게 */
   .main-nav { gap: 2px; }
@@ -1042,7 +1043,8 @@ body {
   .main-nav a { padding: 5px 6px; font-size: 0.68rem; }
   .header-inner { padding: 0 10px; }
   .main-wrap { padding: 14px 10px 80px; }
-  .page-hero h1 { font-size: 1.2rem; }
+  .page-hero h1 { font-size: 1.15rem; }
+  .logo-text { font-size: 0.65rem; }
 }
 
 /* ===== HOME PAGE ===== */

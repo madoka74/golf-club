@@ -123,8 +123,8 @@ window.openMemberDetail = async function(id) {
         ${row('직장', m.company||'-')} ${row('직책', m.position||'-')}
       </div>
       <div style="margin-top:14px; padding:12px 14px; background:var(--green-light); border-radius:8px;">
-        <div style="font-size:0.72rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px;">자기소개</div>
-        <div style="font-size:0.875rem; color:var(--ink); line-height:1.6; white-space:pre-wrap;">${m.intro ? m.intro : '작성된 자기소개가 없습니다.'}</div>
+        <div style="font-size:0.72rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px;">자기소개 및 요구사항</div>
+        <div style="font-size:0.875rem; color:var(--ink); line-height:1.6; white-space:pre-wrap;">${m.intro ? m.intro : '작성된 내용이 없습니다.'}</div>
       </div>
       <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="openEditMember('${m.id}')">✏️ 정보 수정</button>
@@ -158,12 +158,23 @@ window.openEditMember = async function(id) {
           <option value="여" ${m.gender==='여'?'selected':''}>여</option>
         </select>
       </div>
-      <div class="form-group"><label>학과</label><input id="edit-dept" value="${m.dept||''}"></div>
-      <div class="form-group"><label>학번</label><input id="edit-studentid" value="${m.studentId||''}"></div>
+      <div class="form-group"><label>학과</label>
+        <select id="edit-dept">
+          <option value="">선택</option>
+          <option value="경영학과" ${m.dept==='경영학과'?'selected':''}>경영학과</option>
+          <option value="경제학과" ${m.dept==='경제학과'?'selected':''}>경제학과</option>
+          <option value="국제경제학과" ${m.dept==='국제경제학과'?'selected':''}>국제경제학과</option>
+          <option value="상학과" ${m.dept==='상학과'?'selected':''}>상학과</option>
+        </select>
+      </div>
+      <div class="form-group"><label>학번</label>
+        <input id="edit-studentid" value="${m.studentId||''}" placeholder="예: 98" inputmode="numeric"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      </div>
       <div class="form-group"><label>직장</label><input id="edit-company" value="${m.company||''}"></div>
       <div class="form-group"><label>직책</label><input id="edit-position" value="${m.position||''}"></div>
-      <div class="form-group full-width"><label>자기소개</label>
-        <textarea id="edit-intro" placeholder="간단한 자기소개를 남겨주세요."
+      <div class="form-group full-width"><label>자기소개 및 요구사항</label>
+        <textarea id="edit-intro" placeholder="간단한 자기소개와 원하는 라운딩 스타일 등을 남겨주세요."
           style="padding:10px 14px; border:1.5px solid var(--line); border-radius:8px;
                  font-size:0.9rem; font-family:inherit; min-height:70px; resize:vertical; width:100%;">${m.intro||''}</textarea>
       </div>
