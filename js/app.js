@@ -709,7 +709,7 @@ window.homeMoveMeeting = async function(dir) {
   await renderHomeMeetingCard(homeMeetings[homeIdx]);
 };
 
-// 참가자 테이블 렌더링 — 이름/성별/학과/학번/좋아요/상세보기
+// 참가자 테이블 렌더링 — 이름/성별/학과/학번/직장/상세보기
 let homeMembersMap = {}; // memberId -> member (최신 정보 매핑용)
 
 async function loadHomeMembersMap() {
@@ -729,7 +729,7 @@ function renderHomeParticipantTable(list) {
     <div style="overflow-x:auto;">
       <table class="data-table">
         <thead><tr>
-          <th>이름</th><th>성별</th><th>학과</th><th>학번</th><th>좋아요</th><th>상세보기</th>
+          <th>이름</th><th>성별</th><th>학과</th><th>학번</th><th>직장</th><th>상세보기</th>
         </tr></thead>
         <tbody>
           ${list.map(p => {
@@ -740,12 +740,7 @@ function renderHomeParticipantTable(list) {
               <td>${m.gender || '-'}</td>
               <td>${m.dept || '-'}</td>
               <td>${m.studentId || '-'}</td>
-              <td>
-                <button class="btn btn-outline btn-sm" style="padding:4px 10px;"
-                  onclick="homeLikeParticipant('${p.phone}', this)">
-                  👍 <span class="like-count">${p.likes || 0}</span>
-                </button>
-              </td>
+              <td>${m.company || '-'}</td>
               <td>
                 ${p.memberId ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;"
                   onclick="openMemberDetail('${p.memberId}')">상세보기</button>` : '-'}
@@ -758,22 +753,6 @@ function renderHomeParticipantTable(list) {
     <p style="margin-top:10px; font-size:0.78rem; color:var(--ink-soft);">총 ${list.length}명</p>
   `;
 }
-
-// 좋아요 클릭
-window.homeLikeParticipant = async function(phone, btnEl) {
-  const meetingId = homeMeetings[homeIdx]?.id;
-  if (!meetingId) return;
-  try {
-    const newCount = await DB.likeParticipant(meetingId, phone);
-    // 로컬 캐시도 갱신
-    const p = homeParticipants.find(x => x.phone === phone);
-    if (p) p.likes = newCount;
-    const span = btnEl.querySelector('.like-count');
-    if (span) span.textContent = newCount;
-  } catch(e) {
-    showToast(e.message, 'error');
-  }
-};
 
 // 참가자 검색
 window.homeSearchParticipants = function() {

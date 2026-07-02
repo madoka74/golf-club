@@ -190,22 +190,9 @@ const DB = {
     d.participants[meetingId].push({
       name, phone,
       memberId: member.id,
-      likes: 0,
       joinedAt: new Date().toISOString()
     });
     await this.save(d);
-  },
-
-  // 참가자 좋아요 +1
-  async likeParticipant(meetingId, phone) {
-    const d = await this.load();
-    const list = d.participants?.[meetingId];
-    if (!list) throw new Error('참가자 정보를 찾을 수 없습니다.');
-    const p = list.find(x => x.phone === phone);
-    if (!p) throw new Error('참가자를 찾을 수 없습니다.');
-    p.likes = (p.likes || 0) + 1;
-    await this.save(d);
-    return p.likes;
   },
 
   async cancelMeeting(meetingId, name, phone) {
